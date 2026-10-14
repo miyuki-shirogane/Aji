@@ -48,8 +48,9 @@ github.com
 
 ```bash
 npm run dev      # HMR
-npm test         # vitest (route parsing, chunking, source-path parsing)
+npm test         # vitest (route/chunk/filter/source-path, real tree-sitter parsing)
 npm run build
+npm run eval     # accuracy benchmark (needs playwright-core + chromium + a GitHub PAT)
 ```
 
 ## License

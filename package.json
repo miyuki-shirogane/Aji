@@ -8,7 +8,8 @@
     "build": "npm run assets && vite build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "eval": "node scripts/eval.mjs"
   },
   "keywords": [
     "chrome-extension",
@@ -30,6 +31,7 @@
     "@crxjs/vite-plugin": "^2.7.1",
     "@types/chrome": "^0.3.5",
     "@types/node": "^26.6.5",
+    "playwright-core": "^1.64.0",
     "tree-sitter-wasms": "^0.1.13",
     "typescript": "^7.0.2",
     "vite": "^5.4.21",

@@ -58,6 +58,57 @@ function symbolOf(node: any): string {
   return (node.text.split('\n')[0] || '').trim().slice(0, 80) || node.type
 }
 
+// Symbol for a module-level declaration: variable/const name where possible,
+// so `const foo = () => {}` and `const TABLE = [...]` become named chunks.
+function moduleSymbol(node: any): string {
+  if (node.type === 'lexical_declaration' || node.type === 'variable_declaration') {
+    const d = (node.namedChildren || []).find((c: any) => c.type === 'variable_declarator')
+    const nameNode = d?.childForFieldName?.('name')
+    if (nameNode) return nameNode.text
+  }
+  const named = node.childForFieldName?.('name')
+  if (named) return named.text
+  return (node.text.split('\n')[0] || '').trim().slice(0, 80) || node.type
+}
+
+const SKIP_TOP_TYPES = new Set(['import_statement', 'comment', 'hash_bang_line', 'import_export_clause'])
+
+function pushNode(chunks: RawChunk[], node: any, symbol: string) {
+  const text = node.text
+  if (text.length < MIN_CHUNK_CHARS) return
+  if (text.length > MAX_CHUNK_CHARS) {
+    chunks.push(...splitIntoWindows(text, node.startPosition.row, symbol))
+  } else {
+    chunks.push({ symbol, startLine: node.startPosition.row + 1, endLine: node.endPosition.row + 1, text })
+  }
+}
+
+/**
+ * Pure: turn a parsed tree into chunks (function/class/method/interface nodes
+ * plus module-level declarations). Kept free of chrome/wasm so it is testable.
+ */
+export function chunksFromTree(root: any, lang: string): RawChunk[] {
+  const types = NODE_TYPES[lang] || []
+  const chunks: RawChunk[] = []
+
+  for (const node of types.length ? root.descendantsOfType(types) : []) {
+    if (!node.isNamed) continue
+    pushNode(chunks, node, symbolOf(node))
+  }
+
+  for (const node of root.namedChildren) {
+    if (SKIP_TOP_TYPES.has(node.type)) continue
+    let inner = node
+    if (node.type === 'export_statement') {
+      inner = node.childForFieldName?.('declaration') || node
+    }
+    if (types.includes(inner.type)) continue // already captured above
+    pushNode(chunks, node, moduleSymbol(inner))
+  }
+
+  return chunks
+}
+
 export async function chunkCode(lang: string, code: string): Promise<RawChunk[]> {
   if (!code || code.length < MIN_CHUNK_CHARS) return []
 
@@ -80,23 +131,11 @@ export async function chunkCode(lang: string, code: string): Promise<RawChunk[]>
     const errors = root.descendantsOfType('ERROR').length
     if (total > 0 && errors / total > ERR_NODE_RATIO) return fixedChunks(code)
 
-    const types = NODE_TYPES[lang] || []
-    const nodes = types.length ? root.descendantsOfType(types) : []
-    const chunks: RawChunk[] = []
-    for (const node of nodes) {
-      if (!node.isNamed) continue
-      const text = node.text
-      if (text.length < MIN_CHUNK_CHARS) continue
-      const symbol = symbolOf(node)
-      if (text.length > MAX_CHUNK_CHARS) {
-        chunks.push(...splitIntoWindows(text, node.startPosition.row, symbol))
-      } else {
-        chunks.push({ symbol, startLine: node.startPosition.row + 1, endLine: node.endPosition.row + 1, text })
-      }
-    }
+    const chunks = chunksFromTree(root, lang)
     return chunks.length ? chunks : fixedChunks(code)
   } catch (e) {
     console.warn('[aji] parse failed, fallback', e)
     return fixedChunks(code)
   }
 }
+
