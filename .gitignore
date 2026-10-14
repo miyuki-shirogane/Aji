@@ -1,6 +1,25 @@
+# dependencies
 node_modules/
+
+# build output
 dist/
-public/wasm/
-*.log
-.DS_Store
 .vite/
+
+# generated wasm assets (created by scripts/copy-assets.mjs from node_modules)
+public/wasm/
+
+# local env / secrets
+.env
+.env.*
+!.env.example
+
+# editor / OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# logs / archives
+*.log
+*.zip
+*.tgz
