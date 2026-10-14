@@ -62,7 +62,7 @@ export const CHUNK_OVERLAP_CHARS = 300
 export const ERR_NODE_RATIO = 0.2
 
 // Embedding / search.
-export const EMBED_MAX_CHARS = 2000
-export const EMBED_BATCH = 16
+export const EMBED_MAX_CHARS = 1024
+export const EMBED_BATCH = 32
 export const TOPN = 25
 export const MIN_SCORE = 0.2

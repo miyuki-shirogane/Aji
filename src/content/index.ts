@@ -54,6 +54,7 @@ let loadingState = false
 let indexed = false
 let stale = false
 let chunkCount = 0
+let device = ''
 let commit: string | null = null
 let results: Hit[] = []
 let status = ''
@@ -114,7 +115,7 @@ function renderBody(): string {
   } else {
     body = `
       <div class="aji-search"><input class="aji-input" type="text" placeholder="用自然语言描述你要找的逻辑…（Enter 检索）" value="${esc(query)}" /></div>
-      <div class="aji-meta">${chunkCount} 个代码块 · ${esc(status || '就绪')}</div>
+      <div class="aji-meta">${chunkCount} 个代码块${device ? ` · ${esc(device)}` : ''} · ${esc(status || '就绪')}</div>
       ${renderResults()}`
   }
 
@@ -218,6 +219,7 @@ async function doIndex() {
     stale = false
     commit = res?.commit ?? commit
     chunkCount = res?.chunkCount ?? 0
+    device = res?.device || device
     status = indexed ? `索引完成（${chunkCount} 块）` : `索引失败：${res?.error || '未知错误'}`
   } catch (e: any) {
     status = `索引失败：${e?.message || e}`
@@ -294,6 +296,7 @@ chrome.runtime.onMessage.addListener((msg: any) => {
     busy = false
     indexed = m.ok
     if (m.ok) chunkCount = m.chunkCount
+    if (m.device) device = m.device
     status = m.ok ? `索引完成（${m.chunkCount} 块）` : `索引失败：${m.error || ''}`
     render()
   }

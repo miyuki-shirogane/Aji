@@ -9,7 +9,7 @@ export type BgRequest =
 // background -> content script (broadcast)
 export type ContentEvent =
   | { to: 'content'; type: 'PROGRESS'; progress: IndexProgress }
-  | { to: 'content'; type: 'INDEX_RESULT'; ok: boolean; chunkCount: number; error?: string }
+  | { to: 'content'; type: 'INDEX_RESULT'; ok: boolean; chunkCount: number; device?: string; error?: string }
 
 // background <-> offscreen document
 export type OffscreenRequest =
@@ -22,6 +22,7 @@ export interface OffscreenReply {
   ok: boolean
   error?: string
   chunkCount?: number
+  device?: string
   hits?: Hit[]
 }
 

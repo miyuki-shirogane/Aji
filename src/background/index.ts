@@ -96,20 +96,25 @@ async function startIndex(owner: string, repo: string, ref: string) {
 
     const BATCH = 25
     let totalChunks = 0
+    let device = ''
+    const tEmbed = Date.now()
     for (let i = 0; i < files.length; i += BATCH) {
       const batch = files.slice(i, i + BATCH)
-      progress(jobId, 'parse', i, files.length, `解析与向量化 ${Math.min(i + BATCH, files.length)}/${files.length} 文件…`)
+      const remain = i > 0 ? Math.round((((Date.now() - tEmbed) / i) * (files.length - i)) / 1000) : null
+      const eta = remain != null ? `，约剩 ${remain}s` : ''
+      progress(jobId, 'parse', i, files.length, `解析与向量化 ${Math.min(i + BATCH, files.length)}/${files.length} 文件（${device || '…'}${eta}）`)
       const r = await callOffscreen({ target: 'offscreen', op: 'indexBatch', repoKey, commit, files: batch })
       if (!r.ok) throw new Error(r.error || '解析/向量化失败')
+      if (r.device) device = r.device
       totalChunks += r.chunkCount ?? 0
     }
 
     await chrome.storage.local.set({
       [metaKeyOf(owner, repo)]: { commit, modelId: MODEL_ID, chunkCount: totalChunks, updatedAt: Date.now() },
     })
-    progress(jobId, 'done', 1, 1, `完成：共 ${totalChunks} 个代码块`)
-    broadcast({ to: 'content', type: 'INDEX_RESULT', ok: true, chunkCount: totalChunks })
-    return { ok: true, chunkCount: totalChunks, commit }
+    progress(jobId, 'done', 1, 1, `完成：共 ${totalChunks} 个代码块（${device || 'n/a'}，用时 ${Math.round((Date.now() - tEmbed) / 1000)}s）`)
+    broadcast({ to: 'content', type: 'INDEX_RESULT', ok: true, chunkCount: totalChunks, device })
+    return { ok: true, chunkCount: totalChunks, commit, device }
   } catch (e) {
     progress(jobId, 'error', 1, 1, String(e))
     broadcast({ to: 'content', type: 'INDEX_RESULT', ok: false, chunkCount: 0, error: String(e) })

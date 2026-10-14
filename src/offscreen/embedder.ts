@@ -1,6 +1,9 @@
 import { MODEL_ID } from '../shared/const'
 
 let modPromise: Promise<any> | null = null
+let activeDevice = ''
+
+export const getActiveDevice = () => activeDevice
 
 async function getModule(): Promise<any> {
   if (!modPromise) {
@@ -24,25 +27,38 @@ async function getExtractor(): Promise<any> {
   if (!extractorPromise) {
     extractorPromise = (async () => {
       const { pipeline, env } = await getModule()
+      const t0 = Date.now()
       const hasWebGpu = typeof navigator !== 'undefined' && 'gpu' in navigator
-      const build = (device: string) => pipeline('feature-extraction', MODEL_ID, { dtype: 'q8', device })
-      const preferWebGpu = async () => {
-        if (hasWebGpu) {
-          try {
-            return await build('webgpu')
-          } catch (e) {
-            console.warn('[aji] webgpu 初始化失败，回退 wasm', e)
+      const adapter = hasWebGpu
+        ? await (navigator as any).gpu.requestAdapter().catch(() => null)
+        : null
+      const build = async (device: string, dtype: string) => {
+        const ex = await pipeline('feature-extraction', MODEL_ID, { dtype, device })
+        activeDevice = `${device}/${dtype}`
+        console.log(`[aji] model ready device=${activeDevice} in ${Date.now() - t0}ms`)
+        return ex
+      }
+      const attempt = async () => {
+        if (adapter) {
+          // WebGPU EP does not support int8 well; try the smallest viable dtypes.
+          // Skip fp32 to avoid a ~90MB download.
+          for (const dtype of ['q8', 'fp16']) {
+            try {
+              return await build('webgpu', dtype)
+            } catch (e) {
+              console.warn(`[aji] webgpu/${dtype} 失败`, e)
+            }
           }
         }
-        return build('wasm')
+        return build('wasm', 'q8')
       }
       try {
-        return await preferWebGpu()
+        return await attempt()
       } catch (e) {
         // huggingface.co is often unreachable in some networks; retry via mirror.
         console.warn('[aji] 模型下载失败，改用镜像 hf-mirror.com 重试', e)
         env.remoteHost = 'https://hf-mirror.com'
-        return await preferWebGpu()
+        return await attempt()
       }
     })()
   }
