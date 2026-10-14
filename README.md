@@ -44,6 +44,23 @@ github.com
 - Query language: English (the default model is English-only and small/fast). Swap `MODEL_ID` in `src/shared/const.ts` for a multilingual one (e.g. `Xenova/multilingual-e5-small`) with matching task prefixes to support Chinese — at roughly 2x the embedding cost.
 - Retrieval and navigation only — it does not generate code or answer questions.
 
+## Evaluation (indicative)
+
+Retrieval-only benchmark on this repo: 30 hand-written queries, a single small
+repo, no reranker, English model. Reproduce with `npm run eval`.
+
+| Metric | Score |
+|---|---|
+| File Top-1 | ~67% |
+| File Top-5 | ~90% |
+| Symbol Top-5 | ~73% |
+| File MRR | ~0.77 |
+
+Caveats: tiny, self-authored set on one repo; "correct" = one specific function,
+so it understates usefulness (the right *file* lands in the top 5 ~90% of the
+time). Numbers move ±1 case (±3%) between runs of the same config — treat this
+as a smoke signal, not a competitive claim.
+
 ## Development
 
 ```bash
