@@ -1,33 +1,51 @@
-// Build toolbar icons from assets/icon.svg.
-// The mark is a black line drawing; on a dark toolbar that is invisible, so we
-// composite it over a white rounded square (visible on both light and dark
-// themes) and rasterize to the PNG sizes Chrome needs.
+// Build toolbar icons from assets/icon.webp.
+// The source is a black line mark on a wide white canvas; crop to the mark and
+// center it on a square (white background keeps it visible on dark toolbars).
 //   node scripts/make-icons.mjs   (requires devDependencies: sharp)
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..')
-const srcFile = join(root, 'assets/icon.svg')
-const appFile = join(root, 'assets/icon-app.svg')
+const src = join(root, 'assets/icon.webp')
 const out = join(root, 'public/icons')
 mkdirSync(out, { recursive: true })
 
-const svg = readFileSync(srcFile, 'utf8')
-const m = svg.match(/<svg[^>]*>([\s\S]*?)<\/svg>/i)
-if (!m) throw new Error('assets/icon.svg: could not parse <svg>')
-const inner = m[1]
-const viewBox = (svg.match(/viewBox="([^"]*)"/) || [])[1] || '0 0 512 512'
-
-const appSvg = `<svg viewBox="${viewBox}" xmlns="http://www.w3.org/2000/svg">
-  <rect x="8" y="8" width="496" height="496" rx="112" fill="#ffffff"/>
-  ${inner}
-</svg>
-`
-writeFileSync(appFile, appSvg)
-
 const sharp = (await import('sharp')).default
-for (const size of [16, 32, 48, 128]) {
-  await sharp(appFile, { density: 384 }).resize(size, size).png().toFile(join(out, `icon-${size}.png`))
+const SIZE = 512
+
+// 1) find the non-white content bounding box
+const { data, info } = await sharp(src).removeAlpha().raw().toBuffer({ resolveWithObject: true })
+const { width: W, height: H, channels: C } = info
+let minx = W, miny = H, maxx = -1, maxy = -1
+for (let y = 0; y < H; y++) {
+  for (let x = 0; x < W; x++) {
+    const i = (y * W + x) * C
+    const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2]
+    if (lum < 235) {
+      if (x < minx) minx = x
+      if (x > maxx) maxx = x
+      if (y < miny) miny = y
+      if (y > maxy) maxy = y
+    }
+  }
 }
-console.log('[icons] wrote assets/icon-app.svg and icon-{16,32,48,128}.png')
+if (maxx < 0) { minx = 0; miny = 0; maxx = W - 1; maxy = H - 1 }
+
+// 2) crop with ~12% breathing room, then fit onto a square white canvas
+const pad = Math.round(Math.max(maxx - minx, maxy - miny) * 0.12)
+const left = Math.max(0, minx - pad)
+const top = Math.max(0, miny - pad)
+const width = Math.min(W - left, maxx - minx + 2 * pad)
+const height = Math.min(H - top, maxy - miny + 2 * pad)
+
+const master = await sharp(src)
+  .extract({ left, top, width, height })
+  .resize(SIZE, SIZE, { fit: 'contain', background: '#ffffff' })
+  .png()
+  .toBuffer()
+
+for (const size of [16, 32, 48, 128]) {
+  await sharp(master).resize(size, size).png().toFile(join(out, `icon-${size}.png`))
+}
+console.log(`[icons] cropped ${width}x${height} -> public/icons/icon-{16,32,48,128}.png`)
