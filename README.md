@@ -1,4 +1,4 @@
-<p align="center"><img src="./public/icons/icon-128.png" width="96" alt="Aji" /></p>
+<p align="center"><img src="./assets/logo.png" width="88" alt="Aji" /></p>
 
 # Aji
 
