@@ -2,7 +2,7 @@ import { EMBED_BATCH, EMBED_MAX_CHARS, PASSAGE_PREFIX, QUERY_PREFIX } from '../s
 import type { OffscreenReply } from '../shared/messages'
 import type { Hit, IndexFile } from '../shared/types'
 import { chunkCode } from './chunker'
-import { embed, getActiveDevice } from './embedder'
+import { embed, getActiveDevice, getEmbedMs, getLoadMs } from './embedder'
 import { clearRepo, countChunks, deleteFiles, getChunksByRepo, listFileShas, putFileChunks, type StoredChunk } from './store'
 
 function dot(a: Float32Array, b: Float32Array): number {
@@ -53,7 +53,7 @@ async function indexBatch(repoKey: string, files: IndexFile[]): Promise<Offscree
     await putFileChunks(repoKey, f, stored)
     count += stored.length
   }
-  return { ok: true, chunkCount: count, device: getActiveDevice() }
+  return { ok: true, chunkCount: count, device: getActiveDevice(), embedMs: getEmbedMs(), loadMs: getLoadMs() }
 }
 
 async function search(repoKey: string, query: string, topN: number): Promise<OffscreenReply> {

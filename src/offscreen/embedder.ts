@@ -2,8 +2,12 @@ import { MODEL_ID } from '../shared/const'
 
 let modPromise: Promise<any> | null = null
 let activeDevice = ''
+let loadMs = 0
+let totalEmbedMs = 0
 
 export const getActiveDevice = () => activeDevice
+export const getLoadMs = () => loadMs
+export const getEmbedMs = () => totalEmbedMs
 
 async function getModule(): Promise<any> {
   if (!modPromise) {
@@ -35,7 +39,8 @@ async function getExtractor(): Promise<any> {
       const build = async (device: string, dtype: string) => {
         const ex = await pipeline('feature-extraction', MODEL_ID, { dtype, device })
         activeDevice = `${device}/${dtype}`
-        console.log(`[aji] model ready device=${activeDevice} in ${Date.now() - t0}ms`)
+        loadMs = Date.now() - t0
+        console.log(`[aji] model ready device=${activeDevice} in ${loadMs}ms`)
         return ex
       }
       const attempt = async () => {
@@ -67,7 +72,9 @@ async function getExtractor(): Promise<any> {
 
 export async function embed(texts: string[]): Promise<Float32Array[]> {
   const extractor = await getExtractor()
+  const t0 = Date.now()
   const out = await extractor(texts, { pooling: 'mean', normalize: true })
+  totalEmbedMs += Date.now() - t0
   const list = out.tolist() as number[][]
   return list.map(v => Float32Array.from(v))
 }

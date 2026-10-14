@@ -67,6 +67,6 @@ export const ERR_NODE_RATIO = 0.2
 // Embedding / search.
 export const EMBED_MAX_CHARS = 1024
 export const EMBED_BATCH = 32
-export const SEARCH_LIMIT = 100 // max candidates fetched per query
-export const PAGE_SIZE = 25 // results shown per page in the panel
+export const SEARCH_LIMIT = 20 // max candidates fetched per query
+export const PAGE_SIZE = 20 // results shown per page in the panel
 export const MIN_SCORE = 0.2

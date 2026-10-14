@@ -25,6 +25,8 @@ export interface OffscreenReply {
   error?: string
   chunkCount?: number
   device?: string
+  embedMs?: number
+  loadMs?: number
   blobShas?: string[]
   hits?: Hit[]
 }

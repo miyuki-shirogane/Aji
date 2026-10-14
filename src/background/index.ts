@@ -94,6 +94,8 @@ async function startIndex(owner: string, repo: string, ref: string) {
     const pending = target.filter(b => !existing.has(b.sha)).slice(0, MAX_FILES)
     let added = 0
     let device = ''
+    let embedMs = 0
+    let loadMs = 0
     const tEmbed = Date.now()
 
     if (pending.length) {
@@ -118,6 +120,8 @@ async function startIndex(owner: string, repo: string, ref: string) {
         const r = await callOffscreen({ target: 'offscreen', op: 'indexBatch', repoKey, files: batch })
         if (!r.ok) throw new Error(r.error || '解析/向量化失败')
         if (r.device) device = r.device
+        embedMs = r.embedMs ?? embedMs
+        loadMs = r.loadMs ?? loadMs
         added += r.chunkCount ?? 0
       }
     } else {
@@ -131,6 +135,7 @@ async function startIndex(owner: string, repo: string, ref: string) {
     })
 
     const secs = Math.round((Date.now() - tEmbed) / 1000)
+    if (added) console.log(`[aji] embed-only ${(embedMs / 1000).toFixed(1)}s for ${added} chunks (${(embedMs / Math.max(1, added)).toFixed(0)}ms/chunk), model load ${(loadMs / 1000).toFixed(1)}s, device ${device}`)
     const msg = pending.length
       ? `完成：新增/更新 ${added} 块，共 ${total} 块（${device || 'n/a'}，用时 ${secs}s）`
       : `索引已最新：共 ${total} 块（用时 ${secs}s）`
