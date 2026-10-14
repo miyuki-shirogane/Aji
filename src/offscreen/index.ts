@@ -21,6 +21,29 @@ function dedupKey(symbol: string, text: string): string {
   return `${symbol}|${text.replace(/\s+/g, ' ').slice(0, 300)}`
 }
 
+// --- lexical side of the hybrid ranker --------------------------------
+const STOP = new Set([
+  'the', 'a', 'an', 'of', 'to', 'and', 'or', 'for', 'in', 'on', 'with', 'from', 'by', 'is', 'are',
+  'be', 'this', 'that', 'it', 'as', 'at', 'we', 'you', 'do', 'does', 'how', 'what', 'where', 'when',
+  'into', 'them', 'they', 'then', 'than', 'use', 'used', 'using', 'get', 'gets', 'set', 'file',
+])
+
+function expandFold(s: string): string {
+  return s.replace(/([a-z0-9])([A-Z])/g, '$1 $2').replace(/[_\-./]+/g, ' ').toLowerCase()
+}
+
+function tokens(s: string): string[] {
+  return expandFold(s).split(/[^a-z0-9]+/).filter(t => t.length >= 3)
+}
+
+function queryTerms(q: string): string[] {
+  return [...new Set(tokens(q).filter(t => !STOP.has(t)))]
+}
+
+const COS_WEIGHT = 0.6
+const LEX_WEIGHT = 0.4
+
+
 async function indexBatch(repoKey: string, files: IndexFile[]): Promise<OffscreenReply> {
   let count = 0
   for (const f of files) {
@@ -32,7 +55,8 @@ async function indexBatch(repoKey: string, files: IndexFile[]): Promise<Offscree
     const stored: StoredChunk[] = []
     for (let i = 0; i < raw.length; i += EMBED_BATCH) {
       const slice = raw.slice(i, i + EMBED_BATCH)
-      const vecs = await embed(slice.map(c => PASSAGE_PREFIX + c.text.slice(0, EMBED_MAX_CHARS)))
+      // Inject the symbol name so the vector is aware of the function name.
+      const vecs = await embed(slice.map(c => (PASSAGE_PREFIX + (c.symbol ? c.symbol + '\n' : '') + c.text).slice(0, EMBED_MAX_CHARS)))
       for (let j = 0; j < slice.length; j++) {
         const c = slice[j]
         stored.push({
@@ -61,7 +85,44 @@ async function search(repoKey: string, query: string, topN: number): Promise<Off
   const chunks = await getChunksByRepo(repoKey)
   if (!chunks.length) return { ok: true, hits: [] }
 
-  const scored = chunks.map(c => ({ c, score: dot(q, c.vec) }))
+  const terms = queryTerms(query)
+  const tokenSets = chunks.map(c => new Set(tokens(`${c.symbol} ${c.path} ${c.text}`)))
+
+  const cos = chunks.map(c => dot(q, c.vec))
+  const lex = chunks.map(() => 0)
+  if (terms.length) {
+    const N = chunks.length
+    const df = new Map<string, number>()
+    for (const t of terms) {
+      let n = 0
+      for (const s of tokenSets) if (s.has(t)) n++
+      df.set(t, n)
+    }
+    for (let i = 0; i < chunks.length; i++) {
+      let s = 0
+      for (const t of terms) {
+        if (tokenSets[i].has(t)) {
+          const d = df.get(t) || 0
+          s += Math.log(1 + (N - d + 0.5) / (d + 0.5))
+        }
+      }
+      lex[i] = s
+    }
+  }
+
+  let cosMax = 0
+  let lexMax = 0
+  for (let i = 0; i < chunks.length; i++) {
+    if (cos[i] > cosMax) cosMax = cos[i]
+    if (lex[i] > lexMax) lexMax = lex[i]
+  }
+
+  const scored = chunks.map((c, i) => {
+    const cosN = cosMax > 0 ? Math.max(0, cos[i]) / cosMax : 0
+    const lexN = lexMax > 0 ? lex[i] / lexMax : 0
+    const score = terms.length ? COS_WEIGHT * cosN + LEX_WEIGHT * lexN : cos[i]
+    return { c, score }
+  })
   scored.sort((a, b) => b.score - a.score)
 
   const seen = new Set<string>()

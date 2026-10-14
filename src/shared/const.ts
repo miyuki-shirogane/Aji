@@ -31,7 +31,8 @@ export const GRAMMAR_FILES: Record<string, string> = {
   tsx: 'tree-sitter-tsx.wasm',
 }
 
-// AST node types that count as a "chunk" per language.
+// AST node types that count as a "chunk" per language. Anonymous arrow
+// functions are intentionally excluded (they produce noise chunks).
 export const NODE_TYPES: Record<string, string[]> = {
   python: ['function_definition', 'class_definition', 'decorated_definition'],
   javascript: [
@@ -39,7 +40,6 @@ export const NODE_TYPES: Record<string, string[]> = {
     'function_expression',
     'method_definition',
     'class_declaration',
-    'arrow_function',
     'generator_function_declaration',
   ],
   typescript: [
@@ -47,14 +47,12 @@ export const NODE_TYPES: Record<string, string[]> = {
     'method_definition',
     'class_declaration',
     'interface_declaration',
-    'arrow_function',
   ],
   tsx: [
     'function_declaration',
     'method_definition',
     'class_declaration',
     'interface_declaration',
-    'arrow_function',
   ],
 }
 
