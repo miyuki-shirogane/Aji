@@ -1,4 +1,4 @@
-import { EXT_TO_LANG, MAX_FILE_BYTES, MAX_FILES, MODEL_ID, OFFSCREEN_PATH, TOPN } from '../shared/const'
+import { EXT_TO_LANG, MAX_FILE_BYTES, MAX_FILES, MODEL_ID, OFFSCREEN_PATH, SEARCH_LIMIT } from '../shared/const'
 import { broadcast } from '../shared/messages'
 import type { BgRequest, OffscreenReply, OffscreenRequest } from '../shared/messages'
 import type { IndexFile, IndexProgress, RepoState } from '../shared/types'
@@ -152,7 +152,7 @@ async function doSearch(owner: string, repo: string, ref: string, query: string)
   const key = metaKeyOf(owner, repo)
   const meta = (await chrome.storage.local.get(key))[key]
   if (!meta || meta.commit !== commit || meta.modelId !== MODEL_ID) return { ok: true, needIndex: true, hits: [] }
-  const r = await callOffscreen({ target: 'offscreen', op: 'search', repoKey: repoKeyOf(owner, repo), query, topN: TOPN })
+  const r = await callOffscreen({ target: 'offscreen', op: 'search', repoKey: repoKeyOf(owner, repo), query, topN: SEARCH_LIMIT })
   return { ...r, commit }
 }
 

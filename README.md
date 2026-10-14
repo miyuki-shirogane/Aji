@@ -34,14 +34,14 @@ github.com
 
 - **Files**: `git/trees?recursive=1`; sources fetched in one shot via `codeload` zip (no REST quota).
 - **Chunks**: functions/classes via tree-sitter; large functions windowed; fixed-size fallback.
-- **Vectors**: `Xenova/all-MiniLM-L6-v2` (384-dim, WebGPU→WASM), stored per-repo in IndexedDB; brute-force cosine.
+- **Vectors**: `Xenova/multilingual-e5-small` (384-dim, zh+en, WebGPU→WASM), stored per-repo in IndexedDB; brute-force cosine.
 - **Jump**: `github.com/{o}/{r}/blob/{commit}/{path}#L{start}-L{end}`.
 
 ## Scope & limitations
 
 - Public repos, current ref, Chrome 116+. Parsed languages: Python / JavaScript / TypeScript / TSX (others fall back to fixed-size chunking).
 - Incremental: only new/changed files are re-embedded (content-addressed by blob sha); test/vendor/generated files are skipped. Embeddings run on WebGPU when available.
-- Chinese queries drop recall on the English single-language model — swap `MODEL_ID` in `src/shared/const.ts` for a multilingual one.
+- Query language: the default model is multilingual (Chinese + English). Swap `MODEL_ID` in `src/shared/const.ts` to trade size/quality (e.g. the lighter English-only `Xenova/all-MiniLM-L6-v2`, plus its `QUERY_PREFIX`/`PASSAGE_PREFIX`).
 - Retrieval and navigation only — it does not generate code or answer questions.
 
 ## Development

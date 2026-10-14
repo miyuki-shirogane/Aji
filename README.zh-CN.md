@@ -34,13 +34,13 @@ github.com
 
 - **文件**：`git/trees?recursive=1`；源码用 `codeload` zip 一次拉全仓（不占 REST 配额）。
 - **分块**：tree-sitter 取函数/类；超大函数切窗；无语法时回退定长分块。
-- **向量**：`Xenova/all-MiniLM-L6-v2`（384 维，WebGPU→WASM），按仓库存 IndexedDB；暴力余弦。
+- **向量**：`Xenova/multilingual-e5-small`（384 维，中英，WebGPU→WASM），按仓库存 IndexedDB；暴力余弦。
 - **跳转**：`github.com/{o}/{r}/blob/{commit}/{path}#L{start}-L{end}`。
 
 ## 适用范围与限制
 
 - 公开仓库、当前 ref、Chrome 116+。解析语言：Python / JavaScript / TypeScript / TSX（其余回退定长分块）。
-- **增量索引**：仅对新增/变更文件重新向量化（按 blob sha 内容寻址）；测试/依赖/生成类文件自动跳过；有 GPU 时走 WebGPU。中文 query 在英文单语模型上召回会下降——可在 `src/shared/const.ts` 把 `MODEL_ID` 换成多语模型。
+- **增量索引**：仅对新增/变更文件重新向量化（按 blob sha 内容寻址）；测试/依赖/生成类文件自动跳过；有 GPU 时走 WebGPU。默认模型为**多语言**（中英）；可在 `src/shared/const.ts` 换更轻的英文模型 `Xenova/all-MiniLM-L6-v2`（并调整 `QUERY_PREFIX`/`PASSAGE_PREFIX`）。
 - 只做检索导航，不生成代码、不回答问题。
 
 ## 开发

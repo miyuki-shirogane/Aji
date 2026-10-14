@@ -1,7 +1,10 @@
 // Central tunables and static maps.
 
-export const MODEL_ID = 'Xenova/all-MiniLM-L6-v2'
+// Multilingual (zh + en + 100 langs). E5 models require task prefixes.
+export const MODEL_ID = 'Xenova/multilingual-e5-small'
 export const EMBED_DIM = 384
+export const QUERY_PREFIX = 'query: '
+export const PASSAGE_PREFIX = 'passage: '
 
 // Extension-root paths (relative to dist root after build).
 export const WASM_DIR = 'wasm/'
@@ -64,5 +67,6 @@ export const ERR_NODE_RATIO = 0.2
 // Embedding / search.
 export const EMBED_MAX_CHARS = 1024
 export const EMBED_BATCH = 32
-export const TOPN = 25
+export const SEARCH_LIMIT = 100 // max candidates fetched per query
+export const PAGE_SIZE = 25 // results shown per page in the panel
 export const MIN_SCORE = 0.2

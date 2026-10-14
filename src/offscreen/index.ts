@@ -1,4 +1,4 @@
-import { EMBED_BATCH, EMBED_MAX_CHARS } from '../shared/const'
+import { EMBED_BATCH, EMBED_MAX_CHARS, PASSAGE_PREFIX, QUERY_PREFIX } from '../shared/const'
 import type { OffscreenReply } from '../shared/messages'
 import type { Hit, IndexFile } from '../shared/types'
 import { chunkCode } from './chunker'
@@ -32,7 +32,7 @@ async function indexBatch(repoKey: string, files: IndexFile[]): Promise<Offscree
     const stored: StoredChunk[] = []
     for (let i = 0; i < raw.length; i += EMBED_BATCH) {
       const slice = raw.slice(i, i + EMBED_BATCH)
-      const vecs = await embed(slice.map(c => c.text.slice(0, EMBED_MAX_CHARS)))
+      const vecs = await embed(slice.map(c => PASSAGE_PREFIX + c.text.slice(0, EMBED_MAX_CHARS)))
       for (let j = 0; j < slice.length; j++) {
         const c = slice[j]
         stored.push({
@@ -57,7 +57,7 @@ async function indexBatch(repoKey: string, files: IndexFile[]): Promise<Offscree
 }
 
 async function search(repoKey: string, query: string, topN: number): Promise<OffscreenReply> {
-  const [q] = await embed([query])
+  const [q] = await embed([QUERY_PREFIX + query])
   const chunks = await getChunksByRepo(repoKey)
   if (!chunks.length) return { ok: true, hits: [] }
 

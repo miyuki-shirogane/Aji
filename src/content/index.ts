@@ -1,6 +1,7 @@
 import { sendToBackground } from '../shared/messages'
 import type { ContentEvent } from '../shared/messages'
 import type { Hit, IndexProgress } from '../shared/types'
+import { PAGE_SIZE } from '../shared/const'
 import { onRouteChange, parseRoute } from './route'
 
 const HOST_ID = 'aji-root'
@@ -59,6 +60,7 @@ let chunkCount = 0
 let device = ''
 let commit: string | null = null
 let results: Hit[] = []
+let visible = PAGE_SIZE
 let status = ''
 let progress: IndexProgress | null = null
 let query = ''
@@ -137,6 +139,7 @@ function renderProgress(): string {
 function renderResults(): string {
   if (!results.length) return `<div class="aji-hint">${busy ? '检索中…' : '输入关键词后回车检索。'}</div>`
   const rows = results
+    .slice(0, visible)
     .map(
       (h, i) => `
       <div class="aji-hit" data-act="hit" data-i="${i}">
@@ -149,13 +152,21 @@ function renderResults(): string {
       </div>`,
     )
     .join('')
-  return `<div class="aji-results">${rows}</div>`
+  const more =
+    results.length > visible
+      ? `<button class="aji-link" data-act="more">显示更多（还有 ${results.length - visible} 条）</button>`
+      : ''
+  return `<div class="aji-results">${rows}</div>${more}`
 }
 
 function bind() {
   if (!root) return
   root.querySelector('[data-act="close"]')?.addEventListener('click', close)
   root.querySelector('[data-act="index"]')?.addEventListener('click', doIndex)
+  root.querySelector('[data-act="more"]')?.addEventListener('click', () => {
+    visible += PAGE_SIZE
+    render()
+  })
   const input = root.querySelector('.aji-input') as HTMLInputElement | null
   if (input) {
     input.value = query
@@ -247,6 +258,7 @@ async function doSearch() {
       results = []
     } else {
       results = res?.hits ?? []
+      visible = PAGE_SIZE
       commit = res?.commit ?? commit
       status = results.length ? `找到 ${results.length} 个结果` : '没有匹配结果'
     }
@@ -310,6 +322,7 @@ onRouteChange(() => {
   route = next
   if (changed) {
     results = []
+    visible = PAGE_SIZE
     commit = null
     indexed = false
     stale = false
