@@ -12,7 +12,7 @@ rmSync(out, { recursive: true, force: true })
 mkdirSync(ort, { recursive: true })
 
 const copies = [
-  ['node_modules/web-tree-sitter/web-tree-sitter.wasm', 'tree-sitter.wasm'],
+  ['node_modules/web-tree-sitter/tree-sitter.wasm', 'tree-sitter.wasm'],
   ['node_modules/tree-sitter-wasms/out/tree-sitter-python.wasm', 'tree-sitter-python.wasm'],
   ['node_modules/tree-sitter-wasms/out/tree-sitter-javascript.wasm', 'tree-sitter-javascript.wasm'],
   ['node_modules/tree-sitter-wasms/out/tree-sitter-typescript.wasm', 'tree-sitter-typescript.wasm'],

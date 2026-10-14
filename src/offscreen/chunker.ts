@@ -17,8 +17,9 @@ const langCache = new Map<string, any>()
 async function ensureInit(): Promise<void> {
   if (!initPromise) {
     initPromise = (async () => {
-      const mod = await import('web-tree-sitter')
-      ParserCtor = mod.Parser
+      const mod: any = await import('web-tree-sitter')
+      // v0.20.x exports the Parser constructor (Language is attached after init()).
+      ParserCtor = mod.default ?? mod
       await ParserCtor.init({ locateFile: () => chrome.runtime.getURL(WASM_DIR + 'tree-sitter.wasm') })
     })()
   }
@@ -29,10 +30,9 @@ async function getLanguage(lang: string): Promise<any | null> {
   if (!GRAMMAR_FILES[lang]) return null
   await ensureInit()
   if (langCache.has(lang)) return langCache.get(lang)
-  const mod = await import('web-tree-sitter')
   const url = chrome.runtime.getURL(WASM_DIR + GRAMMAR_FILES[lang])
   const bytes = new Uint8Array(await (await fetch(url)).arrayBuffer())
-  const language = await mod.Language.load(bytes)
+  const language = await ParserCtor.Language.load(bytes)
   langCache.set(lang, language)
   return language
 }
