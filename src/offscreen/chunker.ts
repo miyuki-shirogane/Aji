@@ -73,6 +73,9 @@ function moduleSymbol(node: any): string {
 
 const SKIP_TOP_TYPES = new Set(['import_statement', 'comment', 'hash_bang_line', 'import_export_clause'])
 
+// Toggle for the module-level chunk pass (const/enum/etc.).
+const MODULE_CHUNKS_ENABLED = true
+
 function pushNode(chunks: RawChunk[], node: any, symbol: string) {
   const text = node.text
   if (text.length < MIN_CHUNK_CHARS) return
@@ -96,7 +99,7 @@ export function chunksFromTree(root: any, lang: string): RawChunk[] {
     pushNode(chunks, node, symbolOf(node))
   }
 
-  for (const node of root.namedChildren) {
+  for (const node of MODULE_CHUNKS_ENABLED ? root.namedChildren : []) {
     if (SKIP_TOP_TYPES.has(node.type)) continue
     let inner = node
     if (node.type === 'export_statement') {
