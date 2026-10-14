@@ -1,10 +1,12 @@
 // Central tunables and static maps.
 
-// Multilingual (zh + en + 100 langs). E5 models require task prefixes.
-export const MODEL_ID = 'Xenova/multilingual-e5-small'
+// English model (small & fast). Swap `MODEL_ID` for a multilingual one
+// (e.g. Xenova/multilingual-e5-small) with the matching task prefixes to
+// support non-English queries, at ~2x the embedding cost.
+export const MODEL_ID = 'Xenova/all-MiniLM-L6-v2'
 export const EMBED_DIM = 384
-export const QUERY_PREFIX = 'query: '
-export const PASSAGE_PREFIX = 'passage: '
+export const QUERY_PREFIX = ''
+export const PASSAGE_PREFIX = ''
 
 // Extension-root paths (relative to dist root after build).
 export const WASM_DIR = 'wasm/'
