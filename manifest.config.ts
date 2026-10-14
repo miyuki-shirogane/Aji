@@ -15,6 +15,7 @@ export default defineManifest({
     'https://huggingface.co/*',
     'https://cdn-lfs.huggingface.co/*',
     'https://cdn-lfs-us-1.huggingface.co/*',
+    'https://hf-mirror.com/*',
   ],
   background: {
     service_worker: 'src/background/index.ts',

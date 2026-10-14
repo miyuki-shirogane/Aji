@@ -23,16 +23,27 @@ let extractorPromise: Promise<any> | null = null
 async function getExtractor(): Promise<any> {
   if (!extractorPromise) {
     extractorPromise = (async () => {
-      const { pipeline } = await getModule()
+      const { pipeline, env } = await getModule()
       const hasWebGpu = typeof navigator !== 'undefined' && 'gpu' in navigator
-      if (hasWebGpu) {
-        try {
-          return await pipeline('feature-extraction', MODEL_ID, { dtype: 'q8', device: 'webgpu' })
-        } catch (e) {
-          console.warn('[aji] webgpu 初始化失败，回退 wasm', e)
+      const build = (device: string) => pipeline('feature-extraction', MODEL_ID, { dtype: 'q8', device })
+      const preferWebGpu = async () => {
+        if (hasWebGpu) {
+          try {
+            return await build('webgpu')
+          } catch (e) {
+            console.warn('[aji] webgpu 初始化失败，回退 wasm', e)
+          }
         }
+        return build('wasm')
       }
-      return pipeline('feature-extraction', MODEL_ID, { dtype: 'q8', device: 'wasm' })
+      try {
+        return await preferWebGpu()
+      } catch (e) {
+        // huggingface.co is often unreachable in some networks; retry via mirror.
+        console.warn('[aji] 模型下载失败，改用镜像 hf-mirror.com 重试', e)
+        env.remoteHost = 'https://hf-mirror.com'
+        return await preferWebGpu()
+      }
     })()
   }
   return extractorPromise

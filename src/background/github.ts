@@ -44,7 +44,13 @@ export async function ghFetch(url: string, pat?: string): Promise<Response> {
 }
 
 export async function resolveCommit(owner: string, repo: string, ref: string, pat?: string): Promise<string> {
-  const res = await ghFetch(`${API}/repos/${owner}/${repo}/commits/${encodeURIComponent(ref)}`, pat)
+  let target = (ref || '').trim()
+  if (!target) {
+    const info = await ghFetch(`${API}/repos/${owner}/${repo}`, pat)
+    if (!info.ok) throw new Error(`读取仓库信息失败：HTTP ${info.status}`)
+    target = (await info.json()).default_branch as string
+  }
+  const res = await ghFetch(`${API}/repos/${owner}/${repo}/commits/${encodeURIComponent(target)}`, pat)
   if (!res.ok) throw new Error(`解析分支失败：HTTP ${res.status}`)
   const j = await res.json()
   return j.sha as string

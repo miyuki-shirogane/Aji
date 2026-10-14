@@ -218,7 +218,7 @@ async function doIndex() {
     stale = false
     commit = res?.commit ?? commit
     chunkCount = res?.chunkCount ?? 0
-    status = indexed ? `索引完成（${chunkCount} 块）` : '索引失败'
+    status = indexed ? `索引完成（${chunkCount} 块）` : `索引失败：${res?.error || '未知错误'}`
   } catch (e: any) {
     status = `索引失败：${e?.message || e}`
   } finally {
