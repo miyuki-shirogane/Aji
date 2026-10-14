@@ -1,0 +1,30 @@
+{
+  "name": "aji",
+  "version": "0.1.0",
+  "description": "Semantic code search for GitHub (local embeddings) - Chrome MV3 extension",
+  "scripts": {
+    "assets": "node scripts/copy-assets.mjs",
+    "dev": "npm run assets && vite",
+    "build": "npm run assets && vite build",
+    "preview": "vite preview"
+  },
+  "keywords": ["chrome-extension", "github", "semantic-search", "embeddings"],
+  "author": "miyuki-shirogane",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@huggingface/transformers": "^4.3.1",
+    "fflate": "^0.8.3",
+    "idb": "^8.0.4",
+    "web-tree-sitter": "^0.27.1"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.7.1",
+    "@types/chrome": "^0.3.5",
+    "@types/node": "^26.6.5",
+    "tree-sitter-wasms": "^0.1.13",
+    "typescript": "^7.0.2",
+    "vite": "^5.4.21"
+  }
+}
