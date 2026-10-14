@@ -35,7 +35,7 @@ export interface RepoState {
 
 export interface IndexProgress {
   jobId: string
-  phase: 'resolve' | 'tree' | 'download' | 'parse' | 'embed' | 'done' | 'error'
+  phase: 'resolve' | 'tree' | 'prune' | 'download' | 'parse' | 'embed' | 'done' | 'error'
   done: number
   total: number
   message: string

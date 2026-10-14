@@ -40,7 +40,7 @@ github.com
 ## 适用范围与限制
 
 - 公开仓库、当前 ref、Chrome 116+。解析语言：Python / JavaScript / TypeScript / TSX（其余回退定长分块）。
-- 无增量索引（新 commit 后需重建）。中文 query 在英文单语模型上召回会下降——可在 `src/shared/const.ts` 把 `MODEL_ID` 换成多语模型。
+- **增量索引**：仅对新增/变更文件重新向量化（按 blob sha 内容寻址）；测试/依赖/生成类文件自动跳过；有 GPU 时走 WebGPU。中文 query 在英文单语模型上召回会下降——可在 `src/shared/const.ts` 把 `MODEL_ID` 换成多语模型。
 - 只做检索导航，不生成代码、不回答问题。
 
 ## 开发

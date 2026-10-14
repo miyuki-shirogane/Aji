@@ -13,16 +13,19 @@ export type ContentEvent =
 
 // background <-> offscreen document
 export type OffscreenRequest =
-  | { target: 'offscreen'; op: 'indexBatch'; repoKey: string; commit: string; files: IndexFile[] }
+  | { target: 'offscreen'; op: 'indexBatch'; repoKey: string; files: IndexFile[] }
+  | { target: 'offscreen'; op: 'listFiles'; repoKey: string }
+  | { target: 'offscreen'; op: 'deleteFiles'; repoKey: string; blobShas: string[] }
   | { target: 'offscreen'; op: 'countChunks'; repoKey: string }
   | { target: 'offscreen'; op: 'clearRepo'; repoKey: string }
-  | { target: 'offscreen'; op: 'search'; repoKey: string; commit: string; query: string; topN: number }
+  | { target: 'offscreen'; op: 'search'; repoKey: string; query: string; topN: number }
 
 export interface OffscreenReply {
   ok: boolean
   error?: string
   chunkCount?: number
   device?: string
+  blobShas?: string[]
   hits?: Hit[]
 }
 

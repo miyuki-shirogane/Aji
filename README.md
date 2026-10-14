@@ -40,7 +40,8 @@ github.com
 ## Scope & limitations
 
 - Public repos, current ref, Chrome 116+. Parsed languages: Python / JavaScript / TypeScript / TSX (others fall back to fixed-size chunking).
-- No incremental index (rebuild after a new commit). Chinese queries drop recall on the English single-language model — swap `MODEL_ID` in `src/shared/const.ts` for a multilingual one.
+- Incremental: only new/changed files are re-embedded (content-addressed by blob sha); test/vendor/generated files are skipped. Embeddings run on WebGPU when available.
+- Chinese queries drop recall on the English single-language model — swap `MODEL_ID` in `src/shared/const.ts` for a multilingual one.
 - Retrieval and navigation only — it does not generate code or answer questions.
 
 ## Development

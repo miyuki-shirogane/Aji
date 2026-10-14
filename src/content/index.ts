@@ -32,6 +32,8 @@ const CSS = `
 .aji-meta { color: var(--fgColor-muted, #656d76); font-size: 12px; margin: 4px 0 8px; }
 .aji-primary { padding: 8px 14px; border-radius: 8px; border: 1px solid var(--fgColor-accent, #0969da); background: var(--bgColor-accent-emphasis, #0969da); color: #fff; cursor: pointer; font-size: 13px; }
 .aji-primary:disabled { opacity: .5; cursor: default; }
+.aji-link { background: none; border: 0; color: var(--fgColor-accent, #0969da); cursor: pointer; font-size: 12px; padding: 0 2px; text-decoration: underline; }
+.aji-link:disabled { opacity: .5; cursor: default; }
 .aji-progress { height: 6px; border-radius: 4px; background: var(--bgColor-inset, #eaeef2); margin: 10px 0 4px; overflow: hidden; }
 .aji-bar { height: 100%; background: var(--bgColor-accent-emphasis, #0969da); transition: width .2s; }
 .aji-results { display: flex; flex-direction: column; gap: 6px; }
@@ -115,7 +117,7 @@ function renderBody(): string {
   } else {
     body = `
       <div class="aji-search"><input class="aji-input" type="text" placeholder="用自然语言描述你要找的逻辑…（Enter 检索）" value="${esc(query)}" /></div>
-      <div class="aji-meta">${chunkCount} 个代码块${device ? ` · ${esc(device)}` : ''} · ${esc(status || '就绪')}</div>
+      <div class="aji-meta">${chunkCount} 个代码块${device ? ` · ${esc(device)}` : ''} · ${esc(status || '就绪')} <button class="aji-link" data-act="index" ${busy ? 'disabled' : ''}>更新</button></div>
       ${renderResults()}`
   }
 

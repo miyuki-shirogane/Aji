@@ -3,6 +3,7 @@ import { broadcast } from '../shared/messages'
 import type { BgRequest, OffscreenReply, OffscreenRequest } from '../shared/messages'
 import type { IndexFile, IndexProgress, RepoState } from '../shared/types'
 import { extOf, fetchSourcesZip, fetchTree, getPat, resolveCommit } from './github'
+import { isIgnoredPath } from './filter'
 
 const repoKeyOf = (o: string, r: string) => `${o}/${r}`
 const metaKeyOf = (o: string, r: string) => `idx:${o}/${r}`
@@ -74,47 +75,68 @@ async function startIndex(owner: string, repo: string, ref: string) {
 
     progress(jobId, 'tree', 0, 1, '拉取文件树…')
     const allBlobs = await fetchTree(owner, repo, commit, pat)
-    const blobs = allBlobs.filter(b => b.size > 0 && b.size <= MAX_FILE_BYTES && EXT_TO_LANG[extOf(b.path)])
-    const treePaths = new Set(allBlobs.map(b => b.path))
+    const target = allBlobs.filter(
+      b => b.size > 0 && b.size <= MAX_FILE_BYTES && EXT_TO_LANG[extOf(b.path)] && !isIgnoredPath(b.path),
+    )
 
-    progress(jobId, 'download', 0, 1, `下载源码（${blobs.length} 个文件）…`)
-    // Use the resolved commit sha (not the branch name) so refs with "/" and
-    // root pages without an explicit ref both work.
-    const sources = await fetchSourcesZip(owner, repo, commit, treePaths, MAX_FILE_BYTES, pat)
+    // Incremental: skip files whose content (blobSha) is already indexed,
+    // and drop chunks for files that no longer exist in the tree.
+    const targetShas = new Set(target.map(b => b.sha))
+    const listed = await callOffscreen({ target: 'offscreen', op: 'listFiles', repoKey })
+    const existing = new Set(listed.blobShas || [])
 
-    const files: IndexFile[] = []
-    for (const b of blobs) {
-      const text = sources.get(b.path)
-      if (text == null) continue
-      const lang = EXT_TO_LANG[extOf(b.path)]
-      files.push({ path: b.path, blobSha: b.sha, lang, text })
-      if (files.length >= MAX_FILES) break
+    const removed = [...existing].filter(sha => !targetShas.has(sha))
+    if (removed.length) {
+      progress(jobId, 'prune', 0, 1, `清理 ${removed.length} 个已删除文件…`)
+      await callOffscreen({ target: 'offscreen', op: 'deleteFiles', repoKey, blobShas: removed })
     }
-    if (!files.length) throw new Error('没有可索引的源码文件（仓库可能为空或语言不受支持）')
 
-    await callOffscreen({ target: 'offscreen', op: 'clearRepo', repoKey })
-
-    const BATCH = 25
-    let totalChunks = 0
+    const pending = target.filter(b => !existing.has(b.sha)).slice(0, MAX_FILES)
+    let added = 0
     let device = ''
     const tEmbed = Date.now()
-    for (let i = 0; i < files.length; i += BATCH) {
-      const batch = files.slice(i, i + BATCH)
-      const remain = i > 0 ? Math.round((((Date.now() - tEmbed) / i) * (files.length - i)) / 1000) : null
-      const eta = remain != null ? `，约剩 ${remain}s` : ''
-      progress(jobId, 'parse', i, files.length, `解析与向量化 ${Math.min(i + BATCH, files.length)}/${files.length} 文件（${device || '…'}${eta}）`)
-      const r = await callOffscreen({ target: 'offscreen', op: 'indexBatch', repoKey, commit, files: batch })
-      if (!r.ok) throw new Error(r.error || '解析/向量化失败')
-      if (r.device) device = r.device
-      totalChunks += r.chunkCount ?? 0
+
+    if (pending.length) {
+      progress(jobId, 'download', 0, 1, `下载源码（新增/变更 ${pending.length} 个文件）…`)
+      // Use the resolved commit sha (not the branch name) so refs with "/" and
+      // root pages without an explicit ref both work.
+      const treePaths = new Set(allBlobs.map(b => b.path))
+      const sources = await fetchSourcesZip(owner, repo, commit, treePaths, MAX_FILE_BYTES, pat)
+      const files: IndexFile[] = []
+      for (const b of pending) {
+        const text = sources.get(b.path)
+        if (text == null) continue
+        files.push({ path: b.path, blobSha: b.sha, lang: EXT_TO_LANG[extOf(b.path)], text })
+      }
+
+      const BATCH = 25
+      for (let i = 0; i < files.length; i += BATCH) {
+        const batch = files.slice(i, i + BATCH)
+        const remain = i > 0 ? Math.round((((Date.now() - tEmbed) / i) * (files.length - i)) / 1000) : null
+        const eta = remain != null ? `，约剩 ${remain}s` : ''
+        progress(jobId, 'parse', i, files.length, `解析与向量化 ${Math.min(i + BATCH, files.length)}/${files.length} 文件（${device || '…'}${eta}）`)
+        const r = await callOffscreen({ target: 'offscreen', op: 'indexBatch', repoKey, files: batch })
+        if (!r.ok) throw new Error(r.error || '解析/向量化失败')
+        if (r.device) device = r.device
+        added += r.chunkCount ?? 0
+      }
+    } else {
+      progress(jobId, 'parse', 0, 0, '内容无变化，无需重新向量化')
     }
 
+    const countRes = await callOffscreen({ target: 'offscreen', op: 'countChunks', repoKey })
+    const total = countRes.chunkCount ?? 0
     await chrome.storage.local.set({
-      [metaKeyOf(owner, repo)]: { commit, modelId: MODEL_ID, chunkCount: totalChunks, updatedAt: Date.now() },
+      [metaKeyOf(owner, repo)]: { commit, modelId: MODEL_ID, chunkCount: total, updatedAt: Date.now() },
     })
-    progress(jobId, 'done', 1, 1, `完成：共 ${totalChunks} 个代码块（${device || 'n/a'}，用时 ${Math.round((Date.now() - tEmbed) / 1000)}s）`)
-    broadcast({ to: 'content', type: 'INDEX_RESULT', ok: true, chunkCount: totalChunks, device })
-    return { ok: true, chunkCount: totalChunks, commit, device }
+
+    const secs = Math.round((Date.now() - tEmbed) / 1000)
+    const msg = pending.length
+      ? `完成：新增/更新 ${added} 块，共 ${total} 块（${device || 'n/a'}，用时 ${secs}s）`
+      : `索引已最新：共 ${total} 块（用时 ${secs}s）`
+    progress(jobId, 'done', 1, 1, msg)
+    broadcast({ to: 'content', type: 'INDEX_RESULT', ok: true, chunkCount: total, device })
+    return { ok: true, chunkCount: total, commit, device, added, pending: pending.length }
   } catch (e) {
     progress(jobId, 'error', 1, 1, String(e))
     broadcast({ to: 'content', type: 'INDEX_RESULT', ok: false, chunkCount: 0, error: String(e) })
@@ -129,8 +151,9 @@ async function doSearch(owner: string, repo: string, ref: string, query: string)
   const commit = await resolveCommit(owner, repo, ref, pat)
   const key = metaKeyOf(owner, repo)
   const meta = (await chrome.storage.local.get(key))[key]
-  if (!meta || meta.commit !== commit) return { ok: true, needIndex: true, hits: [] }
-  return callOffscreen({ target: 'offscreen', op: 'search', repoKey: repoKeyOf(owner, repo), commit, query, topN: TOPN })
+  if (!meta || meta.commit !== commit || meta.modelId !== MODEL_ID) return { ok: true, needIndex: true, hits: [] }
+  const r = await callOffscreen({ target: 'offscreen', op: 'search', repoKey: repoKeyOf(owner, repo), query, topN: TOPN })
+  return { ...r, commit }
 }
 
 async function handle(msg: BgRequest) {

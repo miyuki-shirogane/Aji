@@ -3,7 +3,7 @@ import type { OffscreenReply } from '../shared/messages'
 import type { Hit, IndexFile } from '../shared/types'
 import { chunkCode } from './chunker'
 import { embed, getActiveDevice } from './embedder'
-import { clearRepo, countChunks, getChunks, putChunks, type StoredChunk } from './store'
+import { clearRepo, countChunks, deleteFiles, getChunksByRepo, listFileShas, putFileChunks, type StoredChunk } from './store'
 
 function dot(a: Float32Array, b: Float32Array): number {
   let s = 0
@@ -17,38 +17,48 @@ function snippet(text: string): string {
   return s.length > 220 ? s.slice(0, 220) + '…' : s
 }
 
-async function indexBatch(repoKey: string, commit: string, files: IndexFile[]): Promise<OffscreenReply> {
+function dedupKey(symbol: string, text: string): string {
+  return `${symbol}|${text.replace(/\s+/g, ' ').slice(0, 300)}`
+}
+
+async function indexBatch(repoKey: string, files: IndexFile[]): Promise<OffscreenReply> {
   let count = 0
   for (const f of files) {
     const raw = await chunkCode(f.lang, f.text)
-    if (!raw.length) continue
+    if (!raw.length) {
+      await putFileChunks(repoKey, f, [])
+      continue
+    }
+    const stored: StoredChunk[] = []
     for (let i = 0; i < raw.length; i += EMBED_BATCH) {
       const slice = raw.slice(i, i + EMBED_BATCH)
       const vecs = await embed(slice.map(c => c.text.slice(0, EMBED_MAX_CHARS)))
-      const stored: StoredChunk[] = slice.map((c, j) => ({
-        id: `${repoKey}#${commit}#${f.path}#${c.startLine}`,
-        repoKey,
-        commit,
-        path: f.path,
-        blobSha: f.blobSha,
-        lang: f.lang,
-        symbol: c.symbol,
-        startLine: c.startLine,
-        endLine: c.endLine,
-        text: c.text.slice(0, EMBED_MAX_CHARS),
-        vec: vecs[j],
-        dim: vecs[j].length,
-      }))
-      await putChunks(stored)
-      count += slice.length
+      for (let j = 0; j < slice.length; j++) {
+        const c = slice[j]
+        stored.push({
+          id: `${repoKey}#${f.blobSha}#${c.startLine}`,
+          repoKey,
+          blobSha: f.blobSha,
+          path: f.path,
+          lang: f.lang,
+          symbol: c.symbol,
+          startLine: c.startLine,
+          endLine: c.endLine,
+          text: c.text.slice(0, EMBED_MAX_CHARS),
+          vec: vecs[j],
+          dim: vecs[j].length,
+        })
+      }
     }
+    await putFileChunks(repoKey, f, stored)
+    count += stored.length
   }
   return { ok: true, chunkCount: count, device: getActiveDevice() }
 }
 
-async function search(repoKey: string, commit: string, query: string, topN: number): Promise<OffscreenReply> {
+async function search(repoKey: string, query: string, topN: number): Promise<OffscreenReply> {
   const [q] = await embed([query])
-  const chunks = await getChunks(repoKey, commit)
+  const chunks = await getChunksByRepo(repoKey)
   if (!chunks.length) return { ok: true, hits: [] }
 
   const scored = chunks.map(c => ({ c, score: dot(q, c.vec) }))
@@ -57,7 +67,7 @@ async function search(repoKey: string, commit: string, query: string, topN: numb
   const seen = new Set<string>()
   const hits: Hit[] = []
   for (const { c, score } of scored) {
-    const key = `${c.path}#${c.symbol}`
+    const key = dedupKey(c.symbol, c.text)
     if (seen.has(key)) continue
     seen.add(key)
     hits.push({
@@ -80,7 +90,14 @@ chrome.runtime.onMessage.addListener((msg: any, _sender, sendResponse) => {
     try {
       switch (msg.op) {
         case 'indexBatch':
-          sendResponse(await indexBatch(msg.repoKey, msg.commit, msg.files))
+          sendResponse(await indexBatch(msg.repoKey, msg.files))
+          break
+        case 'listFiles':
+          sendResponse({ ok: true, blobShas: await listFileShas(msg.repoKey) })
+          break
+        case 'deleteFiles':
+          await deleteFiles(msg.repoKey, msg.blobShas || [])
+          sendResponse({ ok: true })
           break
         case 'countChunks':
           sendResponse({ ok: true, chunkCount: await countChunks(msg.repoKey) })
@@ -90,7 +107,7 @@ chrome.runtime.onMessage.addListener((msg: any, _sender, sendResponse) => {
           sendResponse({ ok: true })
           break
         case 'search':
-          sendResponse(await search(msg.repoKey, msg.commit, msg.query, msg.topN))
+          sendResponse(await search(msg.repoKey, msg.query, msg.topN))
           break
         default:
           sendResponse({ ok: false, error: `unknown op ${msg.op}` })
