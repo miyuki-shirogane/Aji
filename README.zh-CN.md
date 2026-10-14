@@ -1,3 +1,5 @@
+<p align="center"><img src="./public/icons/icon-128.png" width="96" alt="Aji" /></p>
+
 # Aji
 
 **GitHub 语义代码检索 —— 浏览器内、本地向量。**

@@ -1,3 +1,5 @@
+<p align="center"><img src="./public/icons/icon-128.png" width="96" alt="Aji" /></p>
+
 # Aji
 
 **Semantic code search for GitHub — in your browser, with local embeddings.**

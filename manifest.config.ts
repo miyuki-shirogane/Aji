@@ -6,6 +6,18 @@ export default defineManifest({
   version: '0.1.0',
   description: '在 GitHub 页面用自然语言检索代码（本地向量，代码不出本机）',
   minimum_chrome_version: '116',
+  icons: {
+    16: 'icons/icon-16.png',
+    32: 'icons/icon-32.png',
+    48: 'icons/icon-48.png',
+    128: 'icons/icon-128.png',
+  },
+  action: {
+    default_icon: {
+      16: 'icons/icon-16.png',
+      32: 'icons/icon-32.png',
+    },
+  },
   permissions: ['storage', 'unlimitedStorage', 'offscreen'],
   host_permissions: [
     'https://github.com/*',
