@@ -1,5 +1,4 @@
 import {
-  CHUNK_OVERLAP_CHARS,
   ERR_NODE_RATIO,
   GRAMMAR_FILES,
   MAX_CHUNK_CHARS,
@@ -7,13 +6,9 @@ import {
   NODE_TYPES,
   WASM_DIR,
 } from '../shared/const'
+import { fixedChunks, splitIntoWindows, type RawChunk } from './text'
 
-export interface RawChunk {
-  symbol: string
-  startLine: number
-  endLine: number
-  text: string
-}
+export type { RawChunk }
 
 let ParserCtor: any = null
 let initPromise: Promise<void> | null = null
@@ -63,42 +58,6 @@ function symbolOf(node: any): string {
   return (node.text.split('\n')[0] || '').trim().slice(0, 80) || node.type
 }
 
-function countLines(s: string): number {
-  let n = 0
-  for (let i = 0; i < s.length; i++) if (s.charCodeAt(i) === 10) n++
-  return n
-}
-
-function windowSplit(text: string, startRow: number, symbol: string): RawChunk[] {
-  const out: RawChunk[] = []
-  let offset = 0
-  let lineOffset = 0
-  const n = text.length
-  while (offset < n) {
-    let end = Math.min(offset + MAX_CHUNK_CHARS, n)
-    if (end < n) {
-      const nl = text.lastIndexOf('\n', end)
-      if (nl > offset + MAX_CHUNK_CHARS * 0.5) end = nl
-    }
-    const piece = text.slice(offset, end)
-    out.push({
-      symbol,
-      startLine: startRow + lineOffset + 1,
-      endLine: startRow + lineOffset + Math.max(1, countLines(piece) + 1),
-      text: piece,
-    })
-    const consumed = Math.max(1, end - offset - CHUNK_OVERLAP_CHARS)
-    lineOffset += countLines(text.slice(offset, offset + consumed))
-    offset += consumed
-  }
-  return out
-}
-
-function fixedChunks(code: string): RawChunk[] {
-  if (code.length < MIN_CHUNK_CHARS) return []
-  return windowSplit(code, 0, '')
-}
-
 export async function chunkCode(lang: string, code: string): Promise<RawChunk[]> {
   if (!code || code.length < MIN_CHUNK_CHARS) return []
 
@@ -130,7 +89,7 @@ export async function chunkCode(lang: string, code: string): Promise<RawChunk[]>
       if (text.length < MIN_CHUNK_CHARS) continue
       const symbol = symbolOf(node)
       if (text.length > MAX_CHUNK_CHARS) {
-        chunks.push(...windowSplit(text, node.startPosition.row, symbol))
+        chunks.push(...splitIntoWindows(text, node.startPosition.row, symbol))
       } else {
         chunks.push({ symbol, startLine: node.startPosition.row + 1, endLine: node.endPosition.row + 1, text })
       }

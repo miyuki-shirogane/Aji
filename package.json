@@ -6,9 +6,16 @@
     "assets": "node scripts/copy-assets.mjs",
     "dev": "npm run assets && vite",
     "build": "npm run assets && vite build",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "preview": "vite preview"
   },
-  "keywords": ["chrome-extension", "github", "semantic-search", "embeddings"],
+  "keywords": [
+    "chrome-extension",
+    "github",
+    "semantic-search",
+    "embeddings"
+  ],
   "author": "miyuki-shirogane",
   "license": "MIT",
   "private": true,
@@ -25,6 +32,7 @@
     "@types/node": "^26.6.5",
     "tree-sitter-wasms": "^0.1.13",
     "typescript": "^7.0.2",
-    "vite": "^5.4.21"
+    "vite": "^5.4.21",
+    "vitest": "^2.1.9"
   }
 }

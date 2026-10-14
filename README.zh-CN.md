@@ -1,0 +1,56 @@
+# Aji
+
+**GitHub 语义代码检索 —— 浏览器内、本地向量。**
+
+[English](./README.md) | 中文
+
+[![CI](https://github.com/miyuki-shirogane/Aji/actions/workflows/ci.yml/badge.svg)](https://github.com/miyuki-shirogane/Aji/actions/workflows/ci.yml)
+
+在 github.com 上按 **Cmd/Ctrl+K**，用自然语言描述你要找的逻辑，直接跳到对应的函数/类与行号。
+
+全程本地运行：代码不离开浏览器，不调用 LLM，不上传服务器；只读。
+
+## 快速开始
+
+```bash
+npm install
+npm run build          # 产物在 dist/
+```
+
+1. 打开 `chrome://extensions`，开启「开发者模式」。
+2. **加载已解压的扩展程序** → 选 `dist/`。
+3. （建议）扩展「选项」→ 填入 GitHub Personal Access Token（把 API 配额从 60 提到 5000 次/小时）。
+4. 打开仓库（如 `github.com/EnixCoda/Gitako`），按 **Cmd/Ctrl+K** → 点「建立索引」→ 等完成。
+5. 输入如 `how does it detect github page navigation`，回车，点结果跳到 `blob/<commit>/.../file.ts#Lx-Ly`。
+
+## 工作原理
+
+```
+github.com
+  └─ content script   路由(turbo:load / pjax:end / 500ms 轮询)、Cmd/Ctrl+K 面板、跳转
+  └─ background (SW)  GitHub API 文件树、codeload zip 取源、限流退避、编排
+  └─ offscreen 文档   tree-sitter 分块 + transformers.js(ONNX) 向量 + IndexedDB 检索
+```
+
+- **文件**：`git/trees?recursive=1`；源码用 `codeload` zip 一次拉全仓（不占 REST 配额）。
+- **分块**：tree-sitter 取函数/类；超大函数切窗；无语法时回退定长分块。
+- **向量**：`Xenova/all-MiniLM-L6-v2`（384 维，WebGPU→WASM），按仓库存 IndexedDB；暴力余弦。
+- **跳转**：`github.com/{o}/{r}/blob/{commit}/{path}#L{start}-L{end}`。
+
+## 适用范围与限制
+
+- 公开仓库、当前 ref、Chrome 116+。解析语言：Python / JavaScript / TypeScript / TSX（其余回退定长分块）。
+- 无增量索引（新 commit 后需重建）。中文 query 在英文单语模型上召回会下降——可在 `src/shared/const.ts` 把 `MODEL_ID` 换成多语模型。
+- 只做检索导航，不生成代码、不回答问题。
+
+## 开发
+
+```bash
+npm run dev      # HMR
+npm test         # vitest（路由解析、分块、源码路径解析）
+npm run build
+```
+
+## 许可证
+
+MIT

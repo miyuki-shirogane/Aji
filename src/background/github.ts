@@ -112,7 +112,7 @@ export async function fetchSourcesZip(
   return out
 }
 
-function stripArchivePrefix(name: string, treePaths: Set<string>): string {
+export function stripArchivePrefix(name: string, treePaths: Set<string>): string {
   const parts = name.split('/')
   for (let i = 1; i < parts.length; i++) {
     const cand = parts.slice(i).join('/')
