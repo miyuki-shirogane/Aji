@@ -24,7 +24,7 @@ export default defineManifest({
     {
       matches: ['https://github.com/*'],
       js: ['src/content/index.ts'],
-      run_at: 'document_idle',
+      run_at: 'document_start',
     },
   ],
   options_page: 'src/options/index.html',

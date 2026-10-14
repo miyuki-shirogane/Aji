@@ -23,3 +23,9 @@ public/wasm/
 *.log
 *.zip
 *.tgz
+
+# packaged extension / signing key
+*.crx
+*.pem
+dist.crx
+dist.pem

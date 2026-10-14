@@ -65,6 +65,10 @@ const esc = (s: string) =>
   s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]!)
 
 function ensureMount() {
+  if (!document.body) {
+    document.addEventListener('DOMContentLoaded', ensureMount, { once: true })
+    return
+  }
   if (!host) {
     host = document.createElement('div')
     host.id = HOST_ID
@@ -258,15 +262,20 @@ function jump(hit?: Hit) {
   window.location.assign(url)
 }
 
-// Keyboard shortcut: Cmd/Ctrl+K toggles the panel.
+// Keyboard shortcut: Cmd/Ctrl+K toggles the panel. Registered at document_start
+// so it fires before GitHub's own Cmd+K command palette handler.
 window.addEventListener(
   'keydown',
   e => {
-    if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+    const isK = e.key === 'k' || e.key === 'K' || e.code === 'KeyK'
+    if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && isK) {
       e.preventDefault()
-      e.stopPropagation()
-      toggle()
-    } else if (e.key === 'Escape' && panelOpen) {
+      e.stopImmediatePropagation()
+      if (!e.repeat) toggle()
+      return
+    }
+    if (e.key === 'Escape' && panelOpen) {
+      e.preventDefault()
       close()
     }
   },
@@ -312,3 +321,4 @@ onRouteChange(() => {
 
 route = parseRoute(location.href)
 ensureMount()
+console.info('[aji] content script ready — press Cmd/Ctrl+K')
