@@ -171,9 +171,6 @@ function bind() {
   if (input) {
     input.value = query
     input.addEventListener('input', () => (query = input.value))
-    input.addEventListener('keydown', e => {
-      if (e.key === 'Enter') doSearch()
-    })
     input.focus()
   }
   root.querySelectorAll('[data-act="hit"]').forEach(el => {
@@ -278,21 +275,36 @@ function jump(hit?: Hit) {
   window.location.assign(url)
 }
 
-// Keyboard shortcut: Cmd/Ctrl+K toggles the panel. Registered at document_start
-// so it fires before GitHub's own Cmd+K command palette handler.
+// Keyboard handling. Registered at document_start so it fires before GitHub's
+// own handlers. Keys typed inside our Shadow DOM panel are stopped here —
+// GitHub's global shortcuts read the retargeted event target and otherwise
+// mistake panel input (e.g. "w") for hotkeys.
 window.addEventListener(
   'keydown',
   e => {
+    const path = typeof e.composedPath === 'function' ? e.composedPath() : []
+    const fromPanel = !!host && path.includes(host)
+    const target = path[0] as HTMLElement | undefined
     const isK = e.key === 'k' || e.key === 'K' || e.code === 'KeyK'
+
     if ((e.metaKey || e.ctrlKey) && !e.shiftKey && !e.altKey && isK) {
       e.preventDefault()
       e.stopImmediatePropagation()
       if (!e.repeat) toggle()
       return
     }
-    if (e.key === 'Escape' && panelOpen) {
-      e.preventDefault()
-      close()
+
+    if (fromPanel) {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        close()
+      } else if (e.key === 'Enter' && target?.classList?.contains('aji-input')) {
+        e.preventDefault()
+        doSearch()
+      }
+      // Keep the key away from the page; do NOT preventDefault so text still
+      // reaches the panel input.
+      e.stopImmediatePropagation()
     }
   },
   true,
