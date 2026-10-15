@@ -3,7 +3,7 @@ import { defineManifest } from '@crxjs/vite-plugin'
 export default defineManifest({
   manifest_version: 3,
   name: 'Aji — GitHub 语义代码检索',
-  version: '0.1.0',
+  version: '0.2.0',
   description: '在 GitHub 页面用自然语言检索代码（本地向量，代码不出本机）',
   minimum_chrome_version: '116',
   icons: {

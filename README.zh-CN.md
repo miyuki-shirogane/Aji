@@ -89,11 +89,13 @@
 
 ## 帮助 Aji
 
-Aji 免费开源。如果它对你有用，欢迎帮它变得更好：
+Aji 是**免费的**。如果你喜欢它，欢迎
 
-- **给个 [Star](https://github.com/miyuki-shirogane/Aji) 并分享**，让更多人发现它。
-- **[提 Bug / 需求](https://github.com/miyuki-shirogane/Aji/issues)** —— 告诉我缺什么（更多语言、更好的排序、私有仓库……）。
-- **一起开发**：欢迎 PR，构建/测试/扩展见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
+- ⭐️ 到 [GitHub](https://github.com/miyuki-shirogane/Aji) 点 Star
+- 👍 在扩展商店里给个好评
+- [功能讨论](https://github.com/miyuki-shirogane/Aji/discussions) 与 [Bug 反馈](https://github.com/miyuki-shirogane/Aji/issues/) 也都欢迎。
+
+想直接参与开发，请看 [contributing.md](./CONTRIBUTING.md)。
 
 ## 许可证
 

@@ -1,6 +1,6 @@
 {
   "name": "aji",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Semantic code search for GitHub (local embeddings) - Chrome MV3 extension",
   "scripts": {
     "assets": "node scripts/copy-assets.mjs",

@@ -95,11 +95,13 @@ as a smoke signal, not a competitive claim.
 
 ## Help Aji
 
-Aji is free and open source. If it's useful to you, please help it grow:
+Aji is **FREE**. If you like it, please
 
-- **[Star the repo](https://github.com/miyuki-shirogane/Aji)** and share it, so more people find it.
-- **[Report a bug or request a feature](https://github.com/miyuki-shirogane/Aji/issues)** — tell me what's missing (another language, better ranking, private repos…).
-- **Contribute** — pull requests are welcome; see [CONTRIBUTING.md](./CONTRIBUTING.md) for how to build, test and extend it.
+- ⭐️ Star it at [GitHub](https://github.com/miyuki-shirogane/Aji)
+- 👍 Review in the extension store
+- [Feature discussions](https://github.com/miyuki-shirogane/Aji/discussions) and [bug reports](https://github.com/miyuki-shirogane/Aji/issues/) are also welcome.
+
+Check out [contributing.md](./CONTRIBUTING.md) if you want to contribute to Aji directly.
 
 ## License
 
