@@ -2,7 +2,7 @@
 
 # Aji
 
-**Semantic code search for GitHub — in your browser, with local embeddings.**
+**Find any code in a GitHub repo — just describe it. Runs entirely in your browser.**
 
 English | [中文](./README.zh-CN.md)
 
