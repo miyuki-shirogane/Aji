@@ -98,7 +98,6 @@ as a smoke signal, not a competitive claim.
 Aji is **FREE**. If you like it, please
 
 - ⭐️ Star it at [GitHub](https://github.com/miyuki-shirogane/Aji)
-- 👍 Review in the extension store
 - [Feature discussions](https://github.com/miyuki-shirogane/Aji/discussions) and [bug reports](https://github.com/miyuki-shirogane/Aji/issues/) are also welcome.
 
 Check out [contributing.md](./CONTRIBUTING.md) if you want to contribute to Aji directly.
