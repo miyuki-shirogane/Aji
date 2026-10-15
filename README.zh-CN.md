@@ -24,16 +24,24 @@
 
 ## 快速开始
 
+**安装（免构建）**
+1. 从 [最新 Release](https://github.com/miyuki-shirogane/Aji/releases/latest) 下载 `aji-<version>.zip` 并解压。
+2. 打开 `chrome://extensions`，开启「开发者模式」。
+3. 点「**加载已解压的扩展程序**」→ 选择解压出的 `aji/` 文件夹。
+
+**或从源码构建**
+
 ```bash
 npm install
-npm run build          # 产物在 dist/
+npm run build      # → dist/
 ```
 
-1. 打开 `chrome://extensions`，开启「开发者模式」。
-2. **加载已解压的扩展程序** → 选 `dist/`。
-3. （建议）扩展「选项」→ 填入 GitHub Personal Access Token（把 API 配额从 60 提到 5000 次/小时）。
-4. 打开仓库（如 `github.com/EnixCoda/Gitako`），按 **Cmd/Ctrl+K** → 点「建立索引」→ 等完成。
-5. 输入如 `how does it detect github page navigation`，回车，点结果跳到 `blob/<commit>/.../file.ts#Lx-Ly`。
+再「加载已解压的扩展程序」→ 选 `dist/`。
+
+**使用**
+- （建议）扩展「选项」→ 填入 GitHub Personal Access Token（配额 60 → 5000 次/小时）。
+- 打开一个仓库，按 **Cmd/Ctrl+K** → 点「**Build index**」→ 等它跑完。
+- 输入 query（如 `how does it detect github page navigation`）回车，点结果跳到对应文件与行号。
 
 ## 工作原理
 

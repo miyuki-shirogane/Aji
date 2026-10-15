@@ -24,16 +24,24 @@ Press **Cmd/Ctrl+K** on github.com, describe the logic you're looking for, and j
 
 ## Quick start
 
+**Install (no build needed)**
+1. Download `aji-<version>.zip` from the [latest release](https://github.com/miyuki-shirogane/Aji/releases/latest) and unzip it.
+2. Open `chrome://extensions` and enable **Developer mode**.
+3. Click **Load unpacked** and select the unzipped `aji/` folder.
+
+**Or build from source**
+
 ```bash
 npm install
-npm run build          # output in dist/
+npm run build      # → dist/
 ```
 
-1. Open `chrome://extensions`, enable **Developer mode**.
-2. **Load unpacked** → select `dist/`.
-3. (Recommended) Extension **Options** → paste a GitHub Personal Access Token (raises the API quota from 60 to 5000 req/h).
-4. Open a repo (e.g. `github.com/EnixCoda/Gitako`), press **Cmd/Ctrl+K**, click **Build index**, wait for it to finish.
-5. Type e.g. `how does it detect github page navigation`, hit Enter, click a result to jump to `blob/<commit>/.../file.ts#Lx-Ly`.
+Then **Load unpacked** → select `dist/`.
+
+**Use it**
+- (Recommended) Extension **Options** → paste a GitHub Personal Access Token (raises the API quota from 60 to 5000 req/h).
+- Open a repo, press **Cmd/Ctrl+K**, click **Build index**, and wait for it to finish.
+- Type a query (e.g. `how does it detect github page navigation`), press Enter, and click a result to jump to the file and line.
 
 ## How it works
 
