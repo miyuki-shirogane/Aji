@@ -32,42 +32,12 @@ Press **Cmd/Ctrl+K** on github.com, describe the logic you're looking for, and j
 5. Open a repo, press **Cmd/Ctrl+K**, click **Build index**, and wait for it to finish.
 6. Type a query (e.g. `how does it detect github page navigation`), press Enter, and click a result to jump to the file and line.
 
-## How it works
-
-<p align="center"><img src="./assets/architecture.svg" alt="Aji architecture" width="700" /></p>
-
-- **Files**: `git/trees?recursive=1`; sources fetched in one shot via `codeload` zip (no REST quota).
-- **Chunks**: functions/classes via tree-sitter; large functions windowed; fixed-size fallback.
-- **Vectors**: `Xenova/all-MiniLM-L6-v2` (384-dim, English, WebGPU→WASM), stored per-repo in IndexedDB; brute-force cosine.
-- **Jump**: `github.com/{o}/{r}/blob/{commit}/{path}#L{start}-L{end}`.
-
 ## Supported languages
 
-AST-aware chunking (function / class / method level). Grammars are lazy-loaded,
-so a repo only pays for the languages it actually contains.
-
-| Language | Extensions |
-|---|---|
-| Python | `.py` |
-| JavaScript | `.js` `.jsx` `.mjs` `.cjs` |
-| TypeScript / TSX | `.ts` `.tsx` |
-| Go | `.go` |
-| Rust | `.rs` |
-| Java | `.java` |
-| C | `.c` `.h` |
-| C++ | `.cpp` `.cc` `.cxx` `.hpp` `.hh` `.hxx` |
-| C# | `.cs` |
-| PHP | `.php` |
-| Kotlin | `.kt` `.kts` |
-| Swift | `.swift` |
-| Scala | `.scala` `.sc` |
-| Shell | `.sh` `.bash` `.zsh` |
-| Solidity | `.sol` |
-| Zig | `.zig` |
-
-More languages are easy to add: copy the grammar wasm in `scripts/copy-assets.mjs`,
-then extend `EXT_TO_LANG`, `GRAMMAR_FILES` and `NODE_TYPES` in
-`src/shared/const.ts` (`tree-sitter-wasms` ships 30+ grammars).
+Functions and classes are chunked via tree-sitter, and grammars are lazy-loaded
+(a repo only loads the languages it contains): **Python, JavaScript,
+TypeScript/TSX, Go, Rust, Java, C, C++, C#, PHP, Kotlin, Swift, Scala, Shell,
+Solidity, Zig.**
 
 ## Scope & limitations
 
@@ -75,23 +45,6 @@ then extend `EXT_TO_LANG`, `GRAMMAR_FILES` and `NODE_TYPES` in
 - Incremental: only new/changed files are re-embedded (content-addressed by blob sha); test/vendor/generated files are skipped. Embeddings run on WebGPU when available.
 - Query language: English (the default model is English-only and small/fast). Swap `MODEL_ID` in `src/shared/const.ts` for a multilingual one (e.g. `Xenova/multilingual-e5-small`) with matching task prefixes to support Chinese — at roughly 2x the embedding cost.
 - Retrieval and navigation only — it does not generate code or answer questions.
-
-## Evaluation (indicative)
-
-Retrieval-only benchmark on this repo: 30 hand-written queries, a single small
-repo, no reranker, English model. Reproduce with `npm run eval`.
-
-| Metric | Score |
-|---|---|
-| File Top-1 | ~67% |
-| File Top-5 | ~90% |
-| Symbol Top-5 | ~73% |
-| File MRR | ~0.77 |
-
-Caveats: tiny, self-authored set on one repo; "correct" = one specific function,
-so it understates usefulness (the right *file* lands in the top 5 ~90% of the
-time). Numbers move ±1 case (±3%) between runs of the same config — treat this
-as a smoke signal, not a competitive claim.
 
 ## Help Aji
 
