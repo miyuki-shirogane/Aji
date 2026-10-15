@@ -7,10 +7,15 @@
 [English](./README.md) | 中文
 
 [![CI](https://github.com/miyuki-shirogane/Aji/actions/workflows/ci.yml/badge.svg)](https://github.com/miyuki-shirogane/Aji/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+![Chrome MV3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4)
 
 在 github.com 上按 **Cmd/Ctrl+K**，用自然语言描述你要找的逻辑，直接跳到对应的函数/类与行号。
 
-全程本地运行：代码不离开浏览器，不调用 LLM，不上传服务器；只读。
+- **默认私密** —— 代码不离开浏览器；无服务端、不调 LLM、只读。
+- **就在页面里** —— 活在 github.com 上，不用新标签页、不用看板。
+- **增量索引** —— 只对新增/变更的文件重新向量化。
+- **零配置** —— 任意公开仓库开箱即用，无需账号。
 
 ## 快速开始
 
@@ -39,9 +44,24 @@ github.com
 - **向量**：`Xenova/all-MiniLM-L6-v2`（384 维，英文，WebGPU→WASM），按仓库存 IndexedDB；暴力余弦。
 - **跳转**：`github.com/{o}/{r}/blob/{commit}/{path}#L{start}-L{end}`。
 
+## 支持的语言
+
+按 AST 分块（函数 / 类 级）：
+
+| 语言 | 扩展名 |
+|---|---|
+| Python | `.py` |
+| JavaScript | `.js` `.jsx` `.mjs` `.cjs` |
+| TypeScript | `.ts` |
+| TSX | `.tsx` |
+
+其他语言**暂不索引**。新增一种很简单：在 `scripts/copy-assets.mjs` 里拷入它的
+`tree-sitter` 语法 wasm，再扩展 `src/shared/const.ts` 的 `EXT_TO_LANG` 与
+`NODE_TYPES` 即可（`tree-sitter-wasms` 内置 35+ 种语法）。
+
 ## 适用范围与限制
 
-- 公开仓库、当前 ref、Chrome 116+。解析语言：Python / JavaScript / TypeScript / TSX（其余回退定长分块）。
+- 公开仓库、当前 ref、Chrome 116+。支持语言：见上。
 - **增量索引**：仅对新增/变更文件重新向量化（按 blob sha 内容寻址）；测试/依赖/生成类文件自动跳过；有 GPU 时走 WebGPU。当前模型为**纯英文**（小、快）；如需中文，可在 `src/shared/const.ts` 换 `Xenova/multilingual-e5-small`（并加 `query:`/`passage:` 前缀），代价是向量化约慢一倍。
 - 只做检索导航，不生成代码、不回答问题。
 

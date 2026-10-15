@@ -7,10 +7,15 @@
 English | [中文](./README.zh-CN.md)
 
 [![CI](https://github.com/miyuki-shirogane/Aji/actions/workflows/ci.yml/badge.svg)](https://github.com/miyuki-shirogane/Aji/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+![Chrome MV3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4)
 
-Press **Cmd/Ctrl+K** on github.com, describe the logic you're looking for in natural language, and jump straight to the matching function/class and line.
+Press **Cmd/Ctrl+K** on github.com, describe the logic you're looking for, and jump straight to the matching function/class and line.
 
-Everything runs locally: code never leaves the browser, no LLM, no server. Read-only.
+- **Private by default** — code never leaves your browser; no server, no LLM, read-only.
+- **In-page** — lives on github.com; no new tab, no dashboard.
+- **Incremental** — only new/changed files are re-embedded.
+- **Zero config** — any public repo, no account.
 
 ## Quick start
 
@@ -39,9 +44,25 @@ github.com
 - **Vectors**: `Xenova/all-MiniLM-L6-v2` (384-dim, English, WebGPU→WASM), stored per-repo in IndexedDB; brute-force cosine.
 - **Jump**: `github.com/{o}/{r}/blob/{commit}/{path}#L{start}-L{end}`.
 
+## Supported languages
+
+AST-aware chunking (function / class level):
+
+| Language | Extensions |
+|---|---|
+| Python | `.py` |
+| JavaScript | `.js` `.jsx` `.mjs` `.cjs` |
+| TypeScript | `.ts` |
+| TSX | `.tsx` |
+
+Other languages are **not indexed yet**. Adding one is small: copy its
+`tree-sitter` grammar wasm in `scripts/copy-assets.mjs`, then extend
+`EXT_TO_LANG` and `NODE_TYPES` in `src/shared/const.ts` (`tree-sitter-wasms`
+ships 35+ grammars).
+
 ## Scope & limitations
 
-- Public repos, current ref, Chrome 116+. Parsed languages: Python / JavaScript / TypeScript / TSX (others fall back to fixed-size chunking).
+- Public repos, current ref, Chrome 116+. Supported languages: see above.
 - Incremental: only new/changed files are re-embedded (content-addressed by blob sha); test/vendor/generated files are skipped. Embeddings run on WebGPU when available.
 - Query language: English (the default model is English-only and small/fast). Swap `MODEL_ID` in `src/shared/const.ts` for a multilingual one (e.g. `Xenova/multilingual-e5-small`) with matching task prefixes to support Chinese — at roughly 2x the embedding cost.
 - Retrieval and navigation only — it does not generate code or answer questions.
