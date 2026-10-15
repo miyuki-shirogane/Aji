@@ -1,6 +1,5 @@
 import { EXT_TO_LANG, MAX_FILE_BYTES, MAX_FILES, MODEL_ID, OFFSCREEN_PATH, SEARCH_LIMIT } from '../shared/const'
-import { broadcast } from '../shared/messages'
-import type { BgRequest, OffscreenReply, OffscreenRequest } from '../shared/messages'
+import type { BgRequest, ContentEvent, OffscreenReply, OffscreenRequest } from '../shared/messages'
 import type { IndexFile, IndexProgress, RepoState } from '../shared/types'
 import { extOf, fetchSourcesZip, fetchTree, getPat, resolveCommit } from './github'
 import { isIgnoredPath } from './filter'
@@ -9,6 +8,14 @@ const repoKeyOf = (o: string, r: string) => `${o}/${r}`
 const metaKeyOf = (o: string, r: string) => `idx:${o}/${r}`
 
 let indexing = false
+// Tab that started the current job; progress must be pushed with tabs.sendMessage
+// (runtime.sendMessage from the service worker does not reach content scripts).
+let jobTabId: number | undefined
+
+function notify(event: ContentEvent): void {
+  if (jobTabId != null) chrome.tabs.sendMessage(jobTabId, event).catch(() => {})
+  else chrome.runtime.sendMessage(event).catch(() => {})
+}
 
 async function ensureOffscreen(): Promise<void> {
   if (await chrome.offscreen.hasDocument()) return
@@ -39,7 +46,7 @@ async function callOffscreen(req: OffscreenRequest): Promise<OffscreenReply> {
 
 function progress(jobId: string, phase: IndexProgress['phase'], done: number, total: number, message: string) {
   const payload: IndexProgress = { jobId, phase, done, total, message }
-  broadcast({ to: 'content', type: 'PROGRESS', progress: payload })
+  notify({ to: 'content', type: 'PROGRESS', progress: payload })
 }
 
 async function getState(owner: string, repo: string, ref: string): Promise<RepoState> {
@@ -70,10 +77,10 @@ async function startIndex(owner: string, repo: string, ref: string) {
   try {
     const pat = await getPat()
 
-    progress(jobId, 'resolve', 0, 1, 'Resolving ref…')
+    progress(jobId, 'resolve', 0, 0, 'Resolving ref…')
     const commit = await resolveCommit(owner, repo, ref, pat)
 
-    progress(jobId, 'tree', 0, 1, 'Fetching file tree…')
+    progress(jobId, 'tree', 0, 0, 'Fetching file tree…')
     const allBlobs = await fetchTree(owner, repo, commit, pat)
     const target = allBlobs.filter(
       b => b.size > 0 && b.size <= MAX_FILE_BYTES && EXT_TO_LANG[extOf(b.path)] && !isIgnoredPath(b.path),
@@ -87,7 +94,7 @@ async function startIndex(owner: string, repo: string, ref: string) {
 
     const removed = [...existing].filter(sha => !targetShas.has(sha))
     if (removed.length) {
-      progress(jobId, 'prune', 0, 1, `Removing ${removed.length} deleted files…`)
+      progress(jobId, 'prune', 0, 0, `Removing ${removed.length} deleted files…`)
       await callOffscreen({ target: 'offscreen', op: 'deleteFiles', repoKey, blobShas: removed })
     }
 
@@ -99,7 +106,7 @@ async function startIndex(owner: string, repo: string, ref: string) {
     const tEmbed = Date.now()
 
     if (pending.length) {
-      progress(jobId, 'download', 0, 1, `Downloading sources (${pending.length} new/changed files)…`)
+      progress(jobId, 'download', 0, 0, `Downloading sources (${pending.length} new/changed files)…`)
       // Use the resolved commit sha (not the branch name) so refs with "/" and
       // root pages without an explicit ref both work.
       const treePaths = new Set(allBlobs.map(b => b.path))
@@ -111,18 +118,25 @@ async function startIndex(owner: string, repo: string, ref: string) {
         files.push({ path: b.path, blobSha: b.sha, lang: EXT_TO_LANG[extOf(b.path)], text })
       }
 
-      const BATCH = 25
+      const BATCH = 8
+      const totalBytes = files.reduce((a, f) => a + f.text.length, 0) || 1
+      let doneBytes = 0
+      const tStart = Date.now()
+      // Byte-weighted bar; indeterminate while the model is still loading.
+      progress(jobId, 'parse', 0, 0, 'Loading model & parsing…')
       for (let i = 0; i < files.length; i += BATCH) {
         const batch = files.slice(i, i + BATCH)
-        const remain = i > 0 ? Math.round((((Date.now() - tEmbed) / i) * (files.length - i)) / 1000) : null
-        const eta = remain != null ? `, ~${remain}s left` : ''
-        progress(jobId, 'parse', i, files.length, `Indexing ${Math.min(i + BATCH, files.length)}/${files.length} files (${device || '…'}${eta})`)
         const r = await callOffscreen({ target: 'offscreen', op: 'indexBatch', repoKey, files: batch })
         if (!r.ok) throw new Error(`embed failed: ${r.error || 'unknown'}`)
         if (r.device) device = r.device
         embedMs = r.embedMs ?? embedMs
         loadMs = r.loadMs ?? loadMs
         added += r.chunkCount ?? 0
+        doneBytes += batch.reduce((a, f) => a + f.text.length, 0)
+        const elapsed = (Date.now() - tStart) / 1000
+        const remain = doneBytes > 0 ? Math.round((elapsed / doneBytes) * (totalBytes - doneBytes)) : null
+        const eta = remain != null ? `, ~${remain}s left` : ''
+        progress(jobId, 'parse', doneBytes, totalBytes, `Embedding ${Math.min(i + BATCH, files.length)}/${files.length} files (${device || '…'}${eta})`)
       }
     } else {
       progress(jobId, 'parse', 0, 0, 'No changes — nothing to re-embed')
@@ -140,11 +154,11 @@ async function startIndex(owner: string, repo: string, ref: string) {
       ? `Done: +${added} chunks, ${total} total (${device || 'n/a'}, ${secs}s)`
       : `Up to date: ${total} chunks (${secs}s)`
     progress(jobId, 'done', 1, 1, msg)
-    broadcast({ to: 'content', type: 'INDEX_RESULT', ok: true, chunkCount: total, device })
+    notify({ to: 'content', type: 'INDEX_RESULT', ok: true, chunkCount: total, device })
     return { ok: true, chunkCount: total, commit, device, added, pending: pending.length }
   } catch (e) {
     progress(jobId, 'error', 1, 1, String(e))
-    broadcast({ to: 'content', type: 'INDEX_RESULT', ok: false, chunkCount: 0, error: String(e) })
+    notify({ to: 'content', type: 'INDEX_RESULT', ok: false, chunkCount: 0, error: String(e) })
     throw e
   } finally {
     indexing = false
@@ -161,11 +175,12 @@ async function doSearch(owner: string, repo: string, ref: string, query: string)
   return { ...r, commit }
 }
 
-async function handle(msg: BgRequest) {
+async function handle(msg: BgRequest, tabId?: number) {
   switch (msg.type) {
     case 'GET_STATE':
       return getState(msg.owner, msg.repo, msg.ref)
     case 'START_INDEX':
+      jobTabId = tabId
       return startIndex(msg.owner, msg.repo, msg.ref)
     case 'SEARCH':
       return doSearch(msg.owner, msg.repo, msg.ref, msg.query)
@@ -174,9 +189,9 @@ async function handle(msg: BgRequest) {
   }
 }
 
-chrome.runtime.onMessage.addListener((msg: any, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((msg: any, sender, sendResponse) => {
   if (!msg || msg.to !== 'bg') return false
-  handle(msg as BgRequest)
+  handle(msg as BgRequest, sender?.tab?.id)
     .then(sendResponse)
     .catch(e => sendResponse({ ok: false, error: String(e?.message || e) }))
   return true

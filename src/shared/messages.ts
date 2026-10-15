@@ -39,9 +39,4 @@ export async function sendToOffscreen(msg: OffscreenRequest): Promise<OffscreenR
   return chrome.runtime.sendMessage(msg)
 }
 
-export function broadcast(msg: ContentEvent): void {
-  // May reject if no content script is listening; ignore.
-  chrome.runtime.sendMessage(msg).catch(() => {})
-}
-
 export type { RepoState, IndexProgress, IndexFile, Hit }

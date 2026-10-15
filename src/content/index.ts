@@ -35,8 +35,13 @@ const CSS = `
 .aji-primary:disabled { opacity: .5; cursor: default; }
 .aji-link { background: none; border: 0; color: var(--fgColor-accent, #0969da); cursor: pointer; font-size: 12px; padding: 0 2px; text-decoration: underline; }
 .aji-link:disabled { opacity: .5; cursor: default; }
-.aji-progress { height: 6px; border-radius: 4px; background: var(--bgColor-inset, #eaeef2); margin: 10px 0 4px; overflow: hidden; }
-.aji-bar { height: 100%; background: var(--bgColor-accent-emphasis, #0969da); transition: width .2s; }
+.aji-progress { height: 6px; border-radius: 4px; background: var(--bgColor-inset, #eaeef2); margin: 4px 0; overflow: hidden; }
+.aji-bar { height: 100%; background: var(--bgColor-accent-emphasis, #0969da); transition: width .3s ease; }
+.aji-proghead { display: flex; justify-content: space-between; align-items: baseline; font-size: 11px; color: var(--fgColor-muted, #656d76); margin: 10px 0 0; }
+.aji-phase { font-weight: 600; }
+.aji-pct { font-variant-numeric: tabular-nums; }
+.aji-progress.aji-indet .aji-bar { width: 35%; animation: aji-indet 1.1s ease-in-out infinite; }
+@keyframes aji-indet { 0% { margin-left: -40%; } 100% { margin-left: 100%; } }
 .aji-results { display: flex; flex-direction: column; gap: 6px; }
 .aji-hit { padding: 8px 10px; border: 1px solid var(--borderColor-muted, #d8dee4); border-radius: 8px; cursor: pointer; }
 .aji-hit:hover { border-color: var(--fgColor-accent, #0969da); background: var(--bgColor-muted, #f6f8fa); }
@@ -109,7 +114,7 @@ function renderBody(): string {
   if (loadingState) {
     body = `<div class="aji-hint">Reading repository state…</div>`
   } else if (busy && !indexed) {
-    body = `<div class="aji-hint">${esc(status || 'Building index…')}</div>${renderProgress()}`
+    body = progress ? renderProgress() : `<div class="aji-hint">${esc(status || 'Building index…')}</div>`
   } else if (!indexed) {
     body = `
       <div class="aji-hint">${stale ? 'Repository changed — rebuild the index.' : 'This repository is not indexed yet.'}</div>
@@ -126,13 +131,22 @@ function renderBody(): string {
   return `<div class="aji-card">${header}${repoLine}<div class="aji-body">${body}</div><div class="aji-foot">Cmd/Ctrl+K to toggle · click a result to jump to the file and line</div></div>`
 }
 
+const PHASE_LABELS: Record<string, string> = {
+  resolve: 'Resolving ref',
+  tree: 'Fetching tree',
+  prune: 'Pruning',
+  download: 'Downloading',
+  parse: 'Embedding',
+}
+
 function renderProgress(): string {
   if (!progress || progress.phase === 'done' || progress.phase === 'error') return ''
-  const pct = progress.total > 0 ? Math.round((progress.done / progress.total) * 100) : 0
+  const determinate = progress.total > 0
+  const pct = determinate ? Math.min(100, Math.round((progress.done / progress.total) * 100)) : null
+  const label = PHASE_LABELS[progress.phase] || ''
   return `
-    <div class="aji-progress">
-      <div class="aji-bar" style="width:${Math.max(4, pct)}%"></div>
-    </div>
+    <div class="aji-proghead"><span class="aji-phase">${esc(label)}</span><span class="aji-pct">${pct != null ? pct + '%' : ''}</span></div>
+    <div class="aji-progress${determinate ? '' : ' aji-indet'}"><div class="aji-bar"${determinate ? ` style="width:${pct}%"` : ''}></div></div>
     <div class="aji-status">${esc(progress.message)}</div>`
 }
 
