@@ -11,7 +11,7 @@ save.addEventListener('click', async () => {
   const pat = input.value.trim()
   if (pat) await chrome.storage.local.set({ pat })
   else await chrome.storage.local.remove('pat')
-  msg.textContent = '已保存'
+  msg.textContent = 'Saved'
   setTimeout(() => (msg.textContent = ''), 1500)
 })
 

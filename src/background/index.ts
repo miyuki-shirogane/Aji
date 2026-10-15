@@ -16,7 +16,7 @@ async function ensureOffscreen(): Promise<void> {
     await chrome.offscreen.createDocument({
       url: chrome.runtime.getURL(OFFSCREEN_PATH),
       reasons: [chrome.offscreen.Reason.WORKERS],
-      justification: '在本机运行 tree-sitter 解析与本地 embedding 推理（不上传代码）。',
+      justification: 'Run tree-sitter parsing and local embedding inference on-device (code is never uploaded).',
     })
   } catch (e) {
     if (!/single offscreen document|already exists/i.test(String(e))) throw e
@@ -63,17 +63,17 @@ async function getState(owner: string, repo: string, ref: string): Promise<RepoS
 }
 
 async function startIndex(owner: string, repo: string, ref: string) {
-  if (indexing) throw new Error('已有索引任务在进行中')
+  if (indexing) throw new Error('An indexing job is already running')
   indexing = true
   const jobId = crypto.randomUUID()
   const repoKey = repoKeyOf(owner, repo)
   try {
     const pat = await getPat()
 
-    progress(jobId, 'resolve', 0, 1, '解析分支…')
+    progress(jobId, 'resolve', 0, 1, 'Resolving ref…')
     const commit = await resolveCommit(owner, repo, ref, pat)
 
-    progress(jobId, 'tree', 0, 1, '拉取文件树…')
+    progress(jobId, 'tree', 0, 1, 'Fetching file tree…')
     const allBlobs = await fetchTree(owner, repo, commit, pat)
     const target = allBlobs.filter(
       b => b.size > 0 && b.size <= MAX_FILE_BYTES && EXT_TO_LANG[extOf(b.path)] && !isIgnoredPath(b.path),
@@ -87,7 +87,7 @@ async function startIndex(owner: string, repo: string, ref: string) {
 
     const removed = [...existing].filter(sha => !targetShas.has(sha))
     if (removed.length) {
-      progress(jobId, 'prune', 0, 1, `清理 ${removed.length} 个已删除文件…`)
+      progress(jobId, 'prune', 0, 1, `Removing ${removed.length} deleted files…`)
       await callOffscreen({ target: 'offscreen', op: 'deleteFiles', repoKey, blobShas: removed })
     }
 
@@ -99,7 +99,7 @@ async function startIndex(owner: string, repo: string, ref: string) {
     const tEmbed = Date.now()
 
     if (pending.length) {
-      progress(jobId, 'download', 0, 1, `下载源码（新增/变更 ${pending.length} 个文件）…`)
+      progress(jobId, 'download', 0, 1, `Downloading sources (${pending.length} new/changed files)…`)
       // Use the resolved commit sha (not the branch name) so refs with "/" and
       // root pages without an explicit ref both work.
       const treePaths = new Set(allBlobs.map(b => b.path))
@@ -115,17 +115,17 @@ async function startIndex(owner: string, repo: string, ref: string) {
       for (let i = 0; i < files.length; i += BATCH) {
         const batch = files.slice(i, i + BATCH)
         const remain = i > 0 ? Math.round((((Date.now() - tEmbed) / i) * (files.length - i)) / 1000) : null
-        const eta = remain != null ? `，约剩 ${remain}s` : ''
-        progress(jobId, 'parse', i, files.length, `解析与向量化 ${Math.min(i + BATCH, files.length)}/${files.length} 文件（${device || '…'}${eta}）`)
+        const eta = remain != null ? `, ~${remain}s left` : ''
+        progress(jobId, 'parse', i, files.length, `Indexing ${Math.min(i + BATCH, files.length)}/${files.length} files (${device || '…'}${eta})`)
         const r = await callOffscreen({ target: 'offscreen', op: 'indexBatch', repoKey, files: batch })
-        if (!r.ok) throw new Error(r.error || '解析/向量化失败')
+        if (!r.ok) throw new Error(`embed failed: ${r.error || 'unknown'}`)
         if (r.device) device = r.device
         embedMs = r.embedMs ?? embedMs
         loadMs = r.loadMs ?? loadMs
         added += r.chunkCount ?? 0
       }
     } else {
-      progress(jobId, 'parse', 0, 0, '内容无变化，无需重新向量化')
+      progress(jobId, 'parse', 0, 0, 'No changes — nothing to re-embed')
     }
 
     const countRes = await callOffscreen({ target: 'offscreen', op: 'countChunks', repoKey })
@@ -137,8 +137,8 @@ async function startIndex(owner: string, repo: string, ref: string) {
     const secs = Math.round((Date.now() - tEmbed) / 1000)
     if (added) console.log(`[aji] embed-only ${(embedMs / 1000).toFixed(1)}s for ${added} chunks (${(embedMs / Math.max(1, added)).toFixed(0)}ms/chunk), model load ${(loadMs / 1000).toFixed(1)}s, device ${device}`)
     const msg = pending.length
-      ? `完成：新增/更新 ${added} 块，共 ${total} 块（${device || 'n/a'}，用时 ${secs}s）`
-      : `索引已最新：共 ${total} 块（用时 ${secs}s）`
+      ? `Done: +${added} chunks, ${total} total (${device || 'n/a'}, ${secs}s)`
+      : `Up to date: ${total} chunks (${secs}s)`
     progress(jobId, 'done', 1, 1, msg)
     broadcast({ to: 'content', type: 'INDEX_RESULT', ok: true, chunkCount: total, device })
     return { ok: true, chunkCount: total, commit, device, added, pending: pending.length }

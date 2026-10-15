@@ -1,6 +1,6 @@
 // Build icons from assets/icon.webp (a black line mark on a wide white canvas).
-//  - toolbar icons: cropped mark on a square white background (visible on dark)
-//  - assets/logo.png: cropped mark, transparent background (for the README)
+// Output: cropped mark on a rounded white square, for both the toolbar
+// (public/icons/*.png) and the README (assets/logo.png).
 //   node scripts/make-icons.mjs   (requires devDependencies: sharp)
 import { mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
@@ -13,8 +13,9 @@ mkdirSync(out, { recursive: true })
 
 const sharp = (await import('sharp')).default
 const SIZE = 512
+const RADIUS = Math.round(SIZE * 0.225) // rounded-corner radius
 
-// 1) find the non-white content bounding box
+// 1) non-white content bounding box
 const { data, info } = await sharp(src).removeAlpha().raw().toBuffer({ resolveWithObject: true })
 const { width: W, height: H, channels: C } = info
 let minx = W, miny = H, maxx = -1, maxy = -1
@@ -32,41 +33,35 @@ for (let y = 0; y < H; y++) {
 }
 if (maxx < 0) { minx = 0; miny = 0; maxx = W - 1; maxy = H - 1 }
 
-// 2) crop with ~12% breathing room
-const pad = Math.round(Math.max(maxx - minx, maxy - miny) * 0.12)
+// 2) crop the mark with ~18% breathing room (smaller mark on a padded tile)
+const pad = Math.round(Math.max(maxx - minx, maxy - miny) * 0.18)
 const left = Math.max(0, minx - pad)
 const top = Math.max(0, miny - pad)
 const width = Math.min(W - left, maxx - minx + 2 * pad)
 const height = Math.min(H - top, maxy - miny + 2 * pad)
 const cropped = await sharp(src).extract({ left, top, width, height }).png().toBuffer()
 
-// 3) toolbar icons: fit onto a square white canvas
-const master = await sharp(cropped)
-  .resize(SIZE, SIZE, { fit: 'contain', background: '#ffffff' })
-  .png()
-  .toBuffer()
-for (const size of [16, 32, 48, 128]) {
-  await sharp(master).resize(size, size).png().toFile(join(out, `icon-${size}.png`))
-}
-
-// 4) README logo: same crop, transparent background (white -> alpha)
-const LOGO = 256
+// 3) the mark on a transparent background (white -> alpha), sized to fit inside
 const g = await sharp(cropped)
-  .resize(LOGO, LOGO, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 1 } })
+  .resize(SIZE, SIZE, { fit: 'contain', background: { r: 255, g: 255, b: 255, alpha: 1 } })
   .removeAlpha()
   .raw()
   .toBuffer({ resolveWithObject: true })
-const rgba = Buffer.alloc(g.info.width * g.info.height * 4)
-for (let i = 0; i < g.info.width * g.info.height; i++) {
-  const r = g.data[i * 3], gg = g.data[i * 3 + 1], b = g.data[i * 3 + 2]
-  const lum = 0.299 * r + 0.587 * gg + 0.114 * b
-  rgba[i * 4] = 0
-  rgba[i * 4 + 1] = 0
-  rgba[i * 4 + 2] = 0
-  rgba[i * 4 + 3] = Math.max(0, Math.min(255, Math.round(255 - lum)))
+const mark = Buffer.alloc(SIZE * SIZE * 4)
+for (let i = 0; i < SIZE * SIZE; i++) {
+  const lum = 0.299 * g.data[i * 3] + 0.587 * g.data[i * 3 + 1] + 0.114 * g.data[i * 3 + 2]
+  mark[i * 4 + 3] = Math.max(0, Math.min(255, Math.round(255 - lum)))
 }
-await sharp(rgba, { raw: { width: g.info.width, height: g.info.height, channels: 4 } })
-  .png()
-  .toFile(join(root, 'assets/logo.png'))
+const markPng = await sharp(mark, { raw: { width: SIZE, height: SIZE, channels: 4 } }).png().toBuffer()
 
-console.log(`[icons] cropped ${width}x${height} -> public/icons/*.png + assets/logo.png`)
+// 4) rounded white square + mark
+const baseSvg = `<svg width="${SIZE}" height="${SIZE}" xmlns="http://www.w3.org/2000/svg"><rect width="${SIZE}" height="${SIZE}" rx="${RADIUS}" ry="${RADIUS}" fill="#ffffff"/></svg>`
+const base = await sharp(Buffer.from(baseSvg)).png().toBuffer()
+const master = await sharp(base).composite([{ input: markPng, gravity: 'center' }]).png().toBuffer()
+
+for (const size of [16, 32, 48, 128]) {
+  await sharp(master).resize(size, size).png().toFile(join(out, `icon-${size}.png`))
+}
+await sharp(master).resize(256, 256).png().toFile(join(root, 'assets/logo.png'))
+
+console.log(`[icons] cropped ${width}x${height} -> public/icons/*.png + assets/logo.png (rounded white)`)

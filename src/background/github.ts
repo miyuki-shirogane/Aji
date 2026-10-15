@@ -36,22 +36,22 @@ export async function ghFetch(url: string, pat?: string): Promise<Response> {
     if (retryAfter) wait = (retryAfter + 1) * 1000
     else if (remaining === '0' && reset) wait = reset * 1000 - Date.now() + 500
     if (wait > 30_000) {
-      throw new Error(`GitHub 限流，请稍后重试或配置 Personal Access Token（约 ${Math.ceil(wait / 1000)}s 后恢复）`)
+      throw new Error(`GitHub rate limited — retry later or set a Personal Access Token (resets in ~${Math.ceil(wait / 1000)}s)`)
     }
     await sleep(Math.max(1000, wait))
   }
-  throw new Error('GitHub 请求多次失败（可能触发限流）')
+  throw new Error('GitHub request failed repeatedly (likely rate limited)')
 }
 
 export async function resolveCommit(owner: string, repo: string, ref: string, pat?: string): Promise<string> {
   let target = (ref || '').trim()
   if (!target) {
     const info = await ghFetch(`${API}/repos/${owner}/${repo}`, pat)
-    if (!info.ok) throw new Error(`读取仓库信息失败：HTTP ${info.status}`)
+    if (!info.ok) throw new Error(`Failed to read repository: HTTP ${info.status}`)
     target = (await info.json()).default_branch as string
   }
   const res = await ghFetch(`${API}/repos/${owner}/${repo}/commits/${encodeURIComponent(target)}`, pat)
-  if (!res.ok) throw new Error(`解析分支失败：HTTP ${res.status}`)
+  if (!res.ok) throw new Error(`Failed to resolve ref: HTTP ${res.status}`)
   const j = await res.json()
   return j.sha as string
 }
@@ -64,7 +64,7 @@ interface TreeBlob {
 
 export async function fetchTree(owner: string, repo: string, commit: string, pat?: string): Promise<TreeBlob[]> {
   const res = await ghFetch(`${API}/repos/${owner}/${repo}/git/trees/${commit}?recursive=1`, pat)
-  if (!res.ok) throw new Error(`拉取文件树失败：HTTP ${res.status}`)
+  if (!res.ok) throw new Error(`Failed to fetch file tree: HTTP ${res.status}`)
   const j = await res.json()
   if (j.truncated) return fetchTreeBfs(owner, repo, commit, pat)
   return (j.tree as any[]).filter(e => e.type === 'blob').map(e => ({ path: e.path, sha: e.sha, size: e.size ?? 0 }))
@@ -101,7 +101,7 @@ export async function fetchSourcesZip(
 ): Promise<Map<string, string>> {
   const url = `https://codeload.github.com/${owner}/${repo}/zip/${encodeURIComponent(ref)}`
   const res = await fetch(url, { headers: pat ? { Authorization: `Bearer ${pat}` } : {} })
-  if (!res.ok) throw new Error(`下载压缩包失败：HTTP ${res.status}（私有仓库需配置 PAT）`)
+  if (!res.ok) throw new Error(`Failed to download archive: HTTP ${res.status} (private repos need a PAT)`)
   const buf = new Uint8Array(await res.arrayBuffer())
   const entries = unzipSync(buf)
   const dec = new TextDecoder('utf-8')

@@ -95,35 +95,35 @@ function renderBody(): string {
   const header = `
     <div class="aji-head">
       <span class="aji-title">Aji</span>
-      <span class="aji-sub">语义代码检索 · 本地向量</span>
+      <span class="aji-sub">Semantic code search · local vectors</span>
       <button class="aji-x" data-act="close">✕</button>
     </div>`
 
   if (!route) {
-    return `<div class="aji-card">${header}<div class="aji-body"><div class="aji-hint">请在某个 GitHub 仓库页面使用（如 github.com/owner/repo）。</div></div></div>`
+    return `<div class="aji-card">${header}<div class="aji-body"><div class="aji-hint">Open a GitHub repository page (e.g. github.com/owner/repo).</div></div></div>`
   }
 
   const repoLine = `<div class="aji-repo">${esc(route.owner)}/${esc(route.repo)}${route.ref ? ` <span class="aji-ref">@${esc(route.ref)}</span>` : ''}</div>`
 
   let body = ''
   if (loadingState) {
-    body = `<div class="aji-hint">读取仓库状态…</div>`
+    body = `<div class="aji-hint">Reading repository state…</div>`
   } else if (busy && !indexed) {
-    body = `<div class="aji-hint">${esc(status || '建立索引中…')}</div>${renderProgress()}`
+    body = `<div class="aji-hint">${esc(status || 'Building index…')}</div>${renderProgress()}`
   } else if (!indexed) {
     body = `
-      <div class="aji-hint">${stale ? '仓库已更新，需要重建索引。' : '该仓库尚未建立本地索引。'}</div>
-      <button class="aji-primary" data-act="index" ${busy ? 'disabled' : ''}>${stale ? '重建索引' : '建立索引'}</button>
+      <div class="aji-hint">${stale ? 'Repository changed — rebuild the index.' : 'This repository is not indexed yet.'}</div>
+      <button class="aji-primary" data-act="index" ${busy ? 'disabled' : ''}>${stale ? 'Rebuild index' : 'Build index'}</button>
       ${status ? `<div class="aji-status">${esc(status)}</div>` : ''}
       ${renderProgress()}`
   } else {
     body = `
-      <div class="aji-search"><input class="aji-input" type="text" placeholder="用自然语言描述你要找的逻辑…（Enter 检索）" value="${esc(query)}" /></div>
-      <div class="aji-meta">${chunkCount} 个代码块${device ? ` · ${esc(device)}` : ''} · ${esc(status || '就绪')} <button class="aji-link" data-act="index" ${busy ? 'disabled' : ''}>更新</button></div>
+      <div class="aji-search"><input class="aji-input" type="text" placeholder="Describe the logic you are looking for… (Enter to search)" value="${esc(query)}" /></div>
+      <div class="aji-meta">${chunkCount} chunks${device ? ` · ${esc(device)}` : ''} · ${esc(status || 'ready')} <button class="aji-link" data-act="index" ${busy ? 'disabled' : ''}>Update</button></div>
       ${renderResults()}`
   }
 
-  return `<div class="aji-card">${header}${repoLine}<div class="aji-body">${body}</div><div class="aji-foot">Cmd/Ctrl+K 唤起 · Esc 关闭 · 结果点击后跳转到文件对应行号</div></div>`
+  return `<div class="aji-card">${header}${repoLine}<div class="aji-body">${body}</div><div class="aji-foot">Cmd/Ctrl+K to toggle · click a result to jump to the file and line</div></div>`
 }
 
 function renderProgress(): string {
@@ -137,7 +137,7 @@ function renderProgress(): string {
 }
 
 function renderResults(): string {
-  if (!results.length) return `<div class="aji-hint">${busy ? '检索中…' : '输入关键词后回车检索。'}</div>`
+  if (!results.length) return `<div class="aji-hint">${busy ? 'Searching…' : 'Type a query and press Enter.'}</div>`
   const rows = results
     .slice(0, visible)
     .map(
@@ -154,7 +154,7 @@ function renderResults(): string {
     .join('')
   const more =
     results.length > visible
-      ? `<button class="aji-link" data-act="more">显示更多（还有 ${results.length - visible} 条）</button>`
+      ? `<button class="aji-link" data-act="more">Show more (${results.length - visible} left)</button>`
       : ''
   return `<div class="aji-results">${rows}</div>${more}`
 }
@@ -210,7 +210,7 @@ async function refreshState() {
     commit = res?.commit ?? null
   } catch (e: any) {
     indexed = false
-    status = `读取失败：${e?.message || e}`
+    status = `Failed to read: ${e?.message || e}`
   } finally {
     loadingState = false
     render()
@@ -221,7 +221,7 @@ async function doIndex() {
   const r = route
   if (!r || busy) return
   busy = true
-  status = '开始建立索引…'
+  status = 'Building index…'
   render()
   try {
     const res: any = await sendToBackground({ to: 'bg', type: 'START_INDEX', owner: r.owner, repo: r.repo, ref: r.ref ?? '' })
@@ -230,9 +230,9 @@ async function doIndex() {
     commit = res?.commit ?? commit
     chunkCount = res?.chunkCount ?? 0
     device = res?.device || device
-    status = indexed ? `索引完成（${chunkCount} 块）` : `索引失败：${res?.error || '未知错误'}`
+    status = indexed ? `Indexed (${chunkCount} chunks)` : `Index failed: ${res?.error || 'unknown error'}`
   } catch (e: any) {
-    status = `索引失败：${e?.message || e}`
+    status = `Index failed: ${e?.message || e}`
   } finally {
     busy = false
     render()
@@ -245,22 +245,22 @@ async function doSearch() {
   const q = query.trim()
   if (!q) return
   busy = true
-  status = '检索中…'
+  status = 'Searching…'
   render()
   try {
     const res: any = await sendToBackground({ to: 'bg', type: 'SEARCH', owner: r.owner, repo: r.repo, ref: r.ref ?? '', query: q })
     if (res?.needIndex) {
       indexed = false
-      status = '仓库有更新或未索引，请先建立索引。'
+      status = 'Repository changed or not indexed — build the index first.'
       results = []
     } else {
       results = res?.hits ?? []
       visible = PAGE_SIZE
       commit = res?.commit ?? commit
-      status = results.length ? `找到 ${results.length} 个结果` : '没有匹配结果'
+      status = results.length ? `Found ${results.length} results` : 'No matches'
     }
   } catch (e: any) {
-    status = `检索失败：${e?.message || e}`
+    status = `Search failed: ${e?.message || e}`
     results = []
   } finally {
     busy = false
@@ -323,7 +323,7 @@ chrome.runtime.onMessage.addListener((msg: any) => {
     indexed = m.ok
     if (m.ok) chunkCount = m.chunkCount
     if (m.device) device = m.device
-    status = m.ok ? `索引完成（${m.chunkCount} 块）` : `索引失败：${m.error || ''}`
+    status = m.ok ? `Indexed (${m.chunkCount} chunks)` : `Index failed: ${m.error || ''}`
     render()
   }
 })

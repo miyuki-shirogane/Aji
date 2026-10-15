@@ -51,7 +51,7 @@ async function getExtractor(): Promise<any> {
             try {
               return await build('webgpu', dtype)
             } catch (e) {
-              console.warn(`[aji] webgpu/${dtype} 失败`, e)
+              console.warn(`[aji] webgpu/${dtype} failed`, e)
             }
           }
         }
@@ -61,7 +61,7 @@ async function getExtractor(): Promise<any> {
         return await attempt()
       } catch (e) {
         // huggingface.co is often unreachable in some networks; retry via mirror.
-        console.warn('[aji] 模型下载失败，改用镜像 hf-mirror.com 重试', e)
+        console.warn('[aji] model download failed, retrying via hf-mirror.com', e)
         env.remoteHost = 'https://hf-mirror.com'
         return await attempt()
       }
