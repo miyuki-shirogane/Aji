@@ -89,10 +89,9 @@
 
 ## 帮助 Aji
 
-Aji 是**免费的**。如果你喜欢它，欢迎
+Aji 是**免费的**。如果你喜欢它，欢迎 ⭐️ 到 [GitHub](https://github.com/miyuki-shirogane/Aji) 点 Star
 
-- ⭐️ 到 [GitHub](https://github.com/miyuki-shirogane/Aji) 点 Star
-- [功能讨论](https://github.com/miyuki-shirogane/Aji/discussions) 与 [Bug 反馈](https://github.com/miyuki-shirogane/Aji/issues/) 也都欢迎。
+[功能讨论](https://github.com/miyuki-shirogane/Aji/discussions) 与 [Bug 反馈](https://github.com/miyuki-shirogane/Aji/issues/) 也都欢迎。
 
 想直接参与开发，请看 [contributing.md](./CONTRIBUTING.md)。
 

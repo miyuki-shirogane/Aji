@@ -95,10 +95,9 @@ as a smoke signal, not a competitive claim.
 
 ## Help Aji
 
-Aji is **FREE**. If you like it, please
+Aji is **FREE**. If you like it, please ⭐️ Star it at [GitHub](https://github.com/miyuki-shirogane/Aji)
 
-- ⭐️ Star it at [GitHub](https://github.com/miyuki-shirogane/Aji)
-- [Feature discussions](https://github.com/miyuki-shirogane/Aji/discussions) and [bug reports](https://github.com/miyuki-shirogane/Aji/issues/) are also welcome.
+[Feature discussions](https://github.com/miyuki-shirogane/Aji/discussions) and [bug reports](https://github.com/miyuki-shirogane/Aji/issues/) are also welcome.
 
 Check out [contributing.md](./CONTRIBUTING.md) if you want to contribute to Aji directly.
 
