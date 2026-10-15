@@ -17,6 +17,11 @@ Press **Cmd/Ctrl+K** on github.com, describe the logic you're looking for, and j
 - **Incremental** — only new/changed files are re-embedded.
 - **Zero config** — any public repo, no account.
 
+## Demo
+
+<p align="center"><img src="./assets/demo.gif" alt="Aji demo" width="760" /></p>
+<p align="center"><sub>Index building is shown <b>~6× faster</b> than real time (it takes a bit longer on a cold start, mostly while the model is loaded once).</sub></p>
+
 ## Quick start
 
 ```bash
