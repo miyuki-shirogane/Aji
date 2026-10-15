@@ -19,8 +19,8 @@ Press **Cmd/Ctrl+K** on github.com, describe the logic you're looking for, and j
 
 ## Demo
 
-<p align="center"><img src="./assets/demo.gif" alt="Aji demo" width="760" /></p>
-<p align="center"><sub>Index building is shown <b>~6× faster</b> than real time (it takes a bit longer on a cold start, mostly while the model is loaded once).</sub></p>
+<p align="center"><a href="https://github.com/miyuki-shirogane/Aji/raw/main/assets/demo.gif"><img src="./assets/demo.gif" alt="Aji demo" width="760" /></a></p>
+<p align="center"><sub>Plays once and stops on the result — <b>click to replay</b>. Index building is shown <b>~6× faster</b> than real time (a bit longer on a cold start).</sub></p>
 
 ## Quick start
 

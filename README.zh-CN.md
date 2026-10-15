@@ -19,8 +19,8 @@
 
 ## 演示
 
-<p align="center"><img src="./assets/demo.gif" alt="Aji 演示" width="760" /></p>
-<p align="center"><sub>「建立索引」一段做了 <b>约 6× 加速</b>；实际会慢一些（首次主要是模型加载，多等一会儿）。</sub></p>
+<p align="center"><a href="https://github.com/miyuki-shirogane/Aji/raw/main/assets/demo.gif"><img src="./assets/demo.gif" alt="Aji 演示" width="760" /></a></p>
+<p align="center"><sub>播放一次并停在结果上 —— <b>点击可重播</b>。「建立索引」一段做了 <b>约 6× 加速</b>；实际会慢一些（首次主要是模型加载）。</sub></p>
 
 ## 快速开始
 
