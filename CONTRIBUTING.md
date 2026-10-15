@@ -47,7 +47,7 @@ Key files: `src/shared/const.ts` (model, language map, chunk node types),
 ## Adding a language
 
 1. Add the grammar wasm to `scripts/copy-assets.mjs` (copy it from
-   `node_modules/tree-sitter-wasms/out/` — the package ships 35+ grammars).
+   `node_modules/tree-sitter-wasms/out/` — the package ships 30+ grammars).
 2. Extend `EXT_TO_LANG`, `GRAMMAR_FILES` and `NODE_TYPES` in `src/shared/const.ts`.
 3. Add the extension → language mapping to the language table in both READMEs.
 

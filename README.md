@@ -43,19 +43,31 @@ Press **Cmd/Ctrl+K** on github.com, describe the logic you're looking for, and j
 
 ## Supported languages
 
-AST-aware chunking (function / class level):
+AST-aware chunking (function / class / method level). Grammars are lazy-loaded,
+so a repo only pays for the languages it actually contains.
 
 | Language | Extensions |
 |---|---|
 | Python | `.py` |
 | JavaScript | `.js` `.jsx` `.mjs` `.cjs` |
-| TypeScript | `.ts` |
-| TSX | `.tsx` |
+| TypeScript / TSX | `.ts` `.tsx` |
+| Go | `.go` |
+| Rust | `.rs` |
+| Java | `.java` |
+| C | `.c` `.h` |
+| C++ | `.cpp` `.cc` `.cxx` `.hpp` `.hh` `.hxx` |
+| C# | `.cs` |
+| PHP | `.php` |
+| Kotlin | `.kt` `.kts` |
+| Swift | `.swift` |
+| Scala | `.scala` `.sc` |
+| Shell | `.sh` `.bash` `.zsh` |
+| Solidity | `.sol` |
+| Zig | `.zig` |
 
-Other languages are **not indexed yet**. Adding one is small: copy its
-`tree-sitter` grammar wasm in `scripts/copy-assets.mjs`, then extend
-`EXT_TO_LANG` and `NODE_TYPES` in `src/shared/const.ts` (`tree-sitter-wasms`
-ships 35+ grammars).
+More languages are easy to add: copy the grammar wasm in `scripts/copy-assets.mjs`,
+then extend `EXT_TO_LANG`, `GRAMMAR_FILES` and `NODE_TYPES` in
+`src/shared/const.ts` (`tree-sitter-wasms` ships 30+ grammars).
 
 ## Scope & limitations
 

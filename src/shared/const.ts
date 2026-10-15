@@ -12,7 +12,8 @@ export const PASSAGE_PREFIX = ''
 export const WASM_DIR = 'wasm/'
 export const OFFSCREEN_PATH = 'src/offscreen/offscreen.html'
 
-// Code file extensions we will parse/index for the MVP.
+// Code file extensions we parse/index. Grammars are lazy-loaded, so a repo only
+// pays for the languages it actually contains.
 export const EXT_TO_LANG: Record<string, string> = {
   '.py': 'python',
   '.js': 'javascript',
@@ -21,18 +22,54 @@ export const EXT_TO_LANG: Record<string, string> = {
   '.cjs': 'javascript',
   '.ts': 'typescript',
   '.tsx': 'tsx',
+  '.go': 'go',
+  '.rs': 'rust',
+  '.java': 'java',
+  '.c': 'c',
+  '.h': 'c',
+  '.cpp': 'cpp',
+  '.cc': 'cpp',
+  '.cxx': 'cpp',
+  '.hpp': 'cpp',
+  '.hh': 'cpp',
+  '.hxx': 'cpp',
+  '.cs': 'c_sharp',
+  '.php': 'php',
+  '.kt': 'kotlin',
+  '.kts': 'kotlin',
+  '.swift': 'swift',
+  '.scala': 'scala',
+  '.sc': 'scala',
+  '.sh': 'bash',
+  '.bash': 'bash',
+  '.zsh': 'bash',
+  '.sol': 'solidity',
+  '.zig': 'zig',
 }
 
-// Language -> bundled grammar wasm filename.
+// Language -> bundled grammar wasm filename (copied from tree-sitter-wasms).
 export const GRAMMAR_FILES: Record<string, string> = {
   python: 'tree-sitter-python.wasm',
   javascript: 'tree-sitter-javascript.wasm',
   typescript: 'tree-sitter-typescript.wasm',
   tsx: 'tree-sitter-tsx.wasm',
+  go: 'tree-sitter-go.wasm',
+  rust: 'tree-sitter-rust.wasm',
+  java: 'tree-sitter-java.wasm',
+  c: 'tree-sitter-c.wasm',
+  cpp: 'tree-sitter-cpp.wasm',
+  c_sharp: 'tree-sitter-c_sharp.wasm',
+  php: 'tree-sitter-php.wasm',
+  kotlin: 'tree-sitter-kotlin.wasm',
+  swift: 'tree-sitter-swift.wasm',
+  scala: 'tree-sitter-scala.wasm',
+  bash: 'tree-sitter-bash.wasm',
+  solidity: 'tree-sitter-solidity.wasm',
+  zig: 'tree-sitter-zig.wasm',
 }
 
-// AST node types that count as a "chunk" per language. Anonymous arrow
-// functions are intentionally excluded (they produce noise chunks).
+// AST node types that count as a "chunk" per language (functions / classes /
+// methods / types). Anonymous arrow functions are intentionally excluded.
 export const NODE_TYPES: Record<string, string[]> = {
   python: ['function_definition', 'class_definition', 'decorated_definition'],
   javascript: [
@@ -42,18 +79,42 @@ export const NODE_TYPES: Record<string, string[]> = {
     'class_declaration',
     'generator_function_declaration',
   ],
-  typescript: [
-    'function_declaration',
-    'method_definition',
+  typescript: ['function_declaration', 'method_definition', 'class_declaration', 'interface_declaration'],
+  tsx: ['function_declaration', 'method_definition', 'class_declaration', 'interface_declaration'],
+  go: ['function_declaration', 'method_declaration', 'type_declaration'],
+  rust: ['function_item', 'struct_item', 'enum_item', 'trait_item', 'impl_item'],
+  java: [
     'class_declaration',
     'interface_declaration',
+    'enum_declaration',
+    'method_declaration',
+    'constructor_declaration',
   ],
-  tsx: [
-    'function_declaration',
-    'method_definition',
+  c: ['function_definition', 'struct_specifier', 'enum_specifier', 'type_definition'],
+  cpp: [
+    'function_definition',
+    'class_specifier',
+    'struct_specifier',
+    'enum_specifier',
+    'namespace_definition',
+    'template_declaration',
+  ],
+  c_sharp: [
     'class_declaration',
     'interface_declaration',
+    'struct_declaration',
+    'enum_declaration',
+    'method_declaration',
+    'constructor_declaration',
+    'record_declaration',
   ],
+  php: ['function_definition', 'class_declaration', 'interface_declaration', 'trait_declaration', 'method_declaration'],
+  kotlin: ['function_declaration', 'class_declaration', 'object_declaration'],
+  swift: ['function_declaration', 'class_declaration', 'protocol_declaration', 'protocol_function_declaration'],
+  scala: ['function_definition', 'class_definition', 'object_definition', 'trait_definition'],
+  bash: ['function_definition'],
+  solidity: ['contract_declaration', 'function_definition'],
+  zig: ['function_declaration'],
 }
 
 // Indexing limits.

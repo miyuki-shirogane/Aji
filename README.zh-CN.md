@@ -43,18 +43,30 @@
 
 ## 支持的语言
 
-按 AST 分块（函数 / 类 级）：
+按 AST 分块（函数 / 类 / 方法 级）。语法**按需懒加载**，仓库里只有哪些语言才会加载哪些。
 
 | 语言 | 扩展名 |
 |---|---|
 | Python | `.py` |
 | JavaScript | `.js` `.jsx` `.mjs` `.cjs` |
-| TypeScript | `.ts` |
-| TSX | `.tsx` |
+| TypeScript / TSX | `.ts` `.tsx` |
+| Go | `.go` |
+| Rust | `.rs` |
+| Java | `.java` |
+| C | `.c` `.h` |
+| C++ | `.cpp` `.cc` `.cxx` `.hpp` `.hh` `.hxx` |
+| C# | `.cs` |
+| PHP | `.php` |
+| Kotlin | `.kt` `.kts` |
+| Swift | `.swift` |
+| Scala | `.scala` `.sc` |
+| Shell | `.sh` `.bash` `.zsh` |
+| Solidity | `.sol` |
+| Zig | `.zig` |
 
-其他语言**暂不索引**。新增一种很简单：在 `scripts/copy-assets.mjs` 里拷入它的
-`tree-sitter` 语法 wasm，再扩展 `src/shared/const.ts` 的 `EXT_TO_LANG` 与
-`NODE_TYPES` 即可（`tree-sitter-wasms` 内置 35+ 种语法）。
+新增一门语言很简单：在 `scripts/copy-assets.mjs` 里拷入它的语法 wasm，再扩展
+`src/shared/const.ts` 的 `EXT_TO_LANG`、`GRAMMAR_FILES`、`NODE_TYPES`
+（`tree-sitter-wasms` 内置 30+ 种语法）。
 
 ## 适用范围与限制
 

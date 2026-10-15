@@ -11,12 +11,29 @@ const ort = join(out, 'ort')
 rmSync(out, { recursive: true, force: true })
 mkdirSync(ort, { recursive: true })
 
+const GRAMMARS = [
+  'python',
+  'javascript',
+  'typescript',
+  'tsx',
+  'go',
+  'rust',
+  'java',
+  'c',
+  'cpp',
+  'c_sharp',
+  'php',
+  'kotlin',
+  'swift',
+  'scala',
+  'bash',
+  'solidity',
+  'zig',
+]
+
 const copies = [
   ['node_modules/web-tree-sitter/tree-sitter.wasm', 'tree-sitter.wasm'],
-  ['node_modules/tree-sitter-wasms/out/tree-sitter-python.wasm', 'tree-sitter-python.wasm'],
-  ['node_modules/tree-sitter-wasms/out/tree-sitter-javascript.wasm', 'tree-sitter-javascript.wasm'],
-  ['node_modules/tree-sitter-wasms/out/tree-sitter-typescript.wasm', 'tree-sitter-typescript.wasm'],
-  ['node_modules/tree-sitter-wasms/out/tree-sitter-tsx.wasm', 'tree-sitter-tsx.wasm'],
+  ...GRAMMARS.map(lang => [`node_modules/tree-sitter-wasms/out/tree-sitter-${lang}.wasm`, `tree-sitter-${lang}.wasm`]),
 ]
 
 for (const [src, dst] of copies) {
