@@ -20,29 +20,17 @@
 
 ## 演示
 
-<p align="center"><a href="https://github.com/miyuki-shirogane/Aji/raw/main/assets/demo.gif"><img src="./assets/demo.gif" alt="Aji 演示" width="760" /></a></p>
-<p align="center"><sub>播放一次并停在结果上 —— <b>点击可重播</b>。「建立索引」一段做了 <b>约 6× 加速</b>；实际会慢一些（首次主要是模型加载）。</sub></p>
+<p align="center"><a href="https://github.com/miyuki-shirogane/Aji/raw/main/assets/demo.gif"><img src="./assets/demo.gif" alt="Aji 演示(GIF)" width="760" /></a></p>
+<p align="center"><sub>这是一张 GIF；「建立索引」一段做了 <b>约 6× 加速</b>，实际会慢一些（首次主要是模型加载）。</sub></p>
 
 ## 快速开始
 
-**安装（免构建）**
 1. 从 [最新 Release](https://github.com/miyuki-shirogane/Aji/releases/latest) 下载 `aji-<version>.zip` 并解压。
 2. 打开 `chrome://extensions`，开启「开发者模式」。
 3. 点「**加载已解压的扩展程序**」→ 选择解压出的 `aji/` 文件夹。
-
-**或从源码构建**
-
-```bash
-npm install
-npm run build      # → dist/
-```
-
-再「加载已解压的扩展程序」→ 选 `dist/`。
-
-**使用**
-- （建议）扩展「选项」→ 填入 GitHub Personal Access Token（配额 60 → 5000 次/小时）。
-- 打开一个仓库，按 **Cmd/Ctrl+K** → 点「**Build index**」→ 等它跑完。
-- 输入 query（如 `how does it detect github page navigation`）回车，点结果跳到对应文件与行号。
+4. （建议）扩展「选项」→ 填入 GitHub Personal Access Token（配额 60 → 5000 次/小时）。
+5. 打开一个仓库，按 **Cmd/Ctrl+K** → 点「**Build index**」→ 等它跑完。
+6. 输入 query（如 `how does it detect github page navigation`）回车，点结果跳到对应文件与行号。
 
 ## 工作原理
 
@@ -87,13 +75,13 @@ npm run build      # → dist/
 
 局限：样本小、自建、单仓库，且"正确"只认某一个函数（会低估实用性——正确**文件**进前五约 90%）。同一配置多次运行会差 ±1 条（±3%）。**当参考信号看，不作竞争性宣称。**
 
-## 开发
+## 帮助 Aji
 
-```bash
-npm run dev      # HMR
-npm test         # vitest（路由解析、分块、源码路径解析）
-npm run build
-```
+Aji 免费开源。如果它对你有用，欢迎帮它变得更好：
+
+- **给个 [Star](https://github.com/miyuki-shirogane/Aji) 并分享**，让更多人发现它。
+- **[提 Bug / 需求](https://github.com/miyuki-shirogane/Aji/issues)** —— 告诉我缺什么（更多语言、更好的排序、私有仓库……）。
+- **一起开发**：欢迎 PR，构建/测试/扩展见 [CONTRIBUTING.md](./CONTRIBUTING.md)。
 
 ## 许可证
 

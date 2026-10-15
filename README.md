@@ -20,29 +20,17 @@ Press **Cmd/Ctrl+K** on github.com, describe the logic you're looking for, and j
 
 ## Demo
 
-<p align="center"><a href="https://github.com/miyuki-shirogane/Aji/raw/main/assets/demo.gif"><img src="./assets/demo.gif" alt="Aji demo" width="760" /></a></p>
-<p align="center"><sub>Plays once and stops on the result — <b>click to replay</b>. Index building is shown <b>~6× faster</b> than real time (a bit longer on a cold start).</sub></p>
+<p align="center"><a href="https://github.com/miyuki-shirogane/Aji/raw/main/assets/demo.gif"><img src="./assets/demo.gif" alt="Aji demo (GIF)" width="760" /></a></p>
+<p align="center"><sub>A GIF — index building is shown <b>~6× faster</b> than real time (a bit longer on a cold start).</sub></p>
 
 ## Quick start
 
-**Install (no build needed)**
 1. Download `aji-<version>.zip` from the [latest release](https://github.com/miyuki-shirogane/Aji/releases/latest) and unzip it.
 2. Open `chrome://extensions` and enable **Developer mode**.
 3. Click **Load unpacked** and select the unzipped `aji/` folder.
-
-**Or build from source**
-
-```bash
-npm install
-npm run build      # → dist/
-```
-
-Then **Load unpacked** → select `dist/`.
-
-**Use it**
-- (Recommended) Extension **Options** → paste a GitHub Personal Access Token (raises the API quota from 60 to 5000 req/h).
-- Open a repo, press **Cmd/Ctrl+K**, click **Build index**, and wait for it to finish.
-- Type a query (e.g. `how does it detect github page navigation`), press Enter, and click a result to jump to the file and line.
+4. (Recommended) Extension **Options** → paste a GitHub Personal Access Token (raises the API quota from 60 to 5000 req/h).
+5. Open a repo, press **Cmd/Ctrl+K**, click **Build index**, and wait for it to finish.
+6. Type a query (e.g. `how does it detect github page navigation`), press Enter, and click a result to jump to the file and line.
 
 ## How it works
 
@@ -93,14 +81,13 @@ so it understates usefulness (the right *file* lands in the top 5 ~90% of the
 time). Numbers move ±1 case (±3%) between runs of the same config — treat this
 as a smoke signal, not a competitive claim.
 
-## Development
+## Help Aji
 
-```bash
-npm run dev      # HMR
-npm test         # vitest (route/chunk/filter/source-path, real tree-sitter parsing)
-npm run build
-npm run eval     # accuracy benchmark (needs playwright-core + chromium + a GitHub PAT)
-```
+Aji is free and open source. If it's useful to you, please help it grow:
+
+- **[Star the repo](https://github.com/miyuki-shirogane/Aji)** and share it, so more people find it.
+- **[Report a bug or request a feature](https://github.com/miyuki-shirogane/Aji/issues)** — tell me what's missing (another language, better ranking, private repos…).
+- **Contribute** — pull requests are welcome; see [CONTRIBUTING.md](./CONTRIBUTING.md) for how to build, test and extend it.
 
 ## License
 
