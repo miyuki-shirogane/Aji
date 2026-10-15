@@ -32,12 +32,7 @@ npm run build          # output in dist/
 
 ## How it works
 
-```
-github.com
-  └─ content script   routing (turbo:load / pjax:end / 500ms poll), Cmd/Ctrl+K panel, jump
-  └─ background (SW)  GitHub API tree, codeload zip sources, rate-limit backoff, orchestration
-  └─ offscreen doc    tree-sitter chunking + transformers.js (ONNX) embeddings + IndexedDB search
-```
+<p align="center"><img src="./assets/architecture.svg" alt="Aji architecture" width="700" /></p>
 
 - **Files**: `git/trees?recursive=1`; sources fetched in one shot via `codeload` zip (no REST quota).
 - **Chunks**: functions/classes via tree-sitter; large functions windowed; fixed-size fallback.

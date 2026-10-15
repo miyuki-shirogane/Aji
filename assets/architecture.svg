@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 392" font-family="-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif" role="img" aria-label="Aji architecture">
+  <defs>
+    <marker id="aji-arrow" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto">
+      <path d="M0,0 L6.5,3 L0,6" fill="#8c959f"/>
+    </marker>
+  </defs>
+
+  <rect x="120" y="16" width="480" height="48" rx="12" fill="#ffffff" stroke="#d0d7de" stroke-width="1.5"/>
+  <text x="140" y="45" font-size="14" font-weight="700" fill="#1f2328">github.com page</text>
+  <text x="580" y="45" font-size="12" fill="#656d76" text-anchor="end">any repo you open</text>
+
+  <line x1="360" y1="64" x2="360" y2="92" stroke="#8c959f" stroke-width="1.5" marker-end="url(#aji-arrow)"/>
+  <text x="372" y="83" font-size="11" fill="#0969da">route change · Cmd/Ctrl+K</text>
+
+  <rect x="120" y="96" width="480" height="66" rx="12" fill="#ffffff" stroke="#d0d7de" stroke-width="1.5"/>
+  <text x="140" y="122" font-size="14" font-weight="700" fill="#1f2328">Content script</text>
+  <text x="140" y="143" font-size="12" fill="#656d76">SPA routing · search panel · jump to the file + line</text>
+
+  <line x1="360" y1="162" x2="360" y2="190" stroke="#8c959f" stroke-width="1.5" marker-end="url(#aji-arrow)"/>
+  <text x="372" y="181" font-size="11" fill="#0969da">chrome.runtime · chrome.tabs messages</text>
+
+  <rect x="120" y="194" width="480" height="66" rx="12" fill="#ffffff" stroke="#d0d7de" stroke-width="1.5"/>
+  <text x="140" y="220" font-size="14" font-weight="700" fill="#1f2328">Background service worker</text>
+  <text x="140" y="241" font-size="12" fill="#656d76">GitHub API file tree · codeload zip · rate-limit backoff · orchestration</text>
+
+  <line x1="360" y1="260" x2="360" y2="288" stroke="#8c959f" stroke-width="1.5" marker-end="url(#aji-arrow)"/>
+  <text x="372" y="279" font-size="11" fill="#0969da">chunks + texts → vectors</text>
+
+  <rect x="120" y="292" width="480" height="66" rx="12" fill="#ffffff" stroke="#d0d7de" stroke-width="1.5"/>
+  <text x="140" y="318" font-size="14" font-weight="700" fill="#1f2328">Offscreen document</text>
+  <text x="140" y="339" font-size="12" fill="#656d76">tree-sitter chunking · transformers.js (ONNX) embeddings · IndexedDB</text>
+
+  <text x="360" y="381" font-size="12" fill="#656d76" text-anchor="middle">All on-device — code never leaves the browser; no server, no LLM</text>
+</svg>

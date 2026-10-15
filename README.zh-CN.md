@@ -32,12 +32,7 @@ npm run build          # 产物在 dist/
 
 ## 工作原理
 
-```
-github.com
-  └─ content script   路由(turbo:load / pjax:end / 500ms 轮询)、Cmd/Ctrl+K 面板、跳转
-  └─ background (SW)  GitHub API 文件树、codeload zip 取源、限流退避、编排
-  └─ offscreen 文档   tree-sitter 分块 + transformers.js(ONNX) 向量 + IndexedDB 检索
-```
+<p align="center"><img src="./assets/architecture.svg" alt="Aji 架构" width="700" /></p>
 
 - **文件**：`git/trees?recursive=1`；源码用 `codeload` zip 一次拉全仓（不占 REST 配额）。
 - **分块**：tree-sitter 取函数/类；超大函数切窗；无语法时回退定长分块。

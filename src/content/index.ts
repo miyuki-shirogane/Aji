@@ -45,11 +45,17 @@ const CSS = `
 .aji-results { display: flex; flex-direction: column; gap: 6px; }
 .aji-hit { padding: 8px 10px; border: 1px solid var(--borderColor-muted, #d8dee4); border-radius: 8px; cursor: pointer; }
 .aji-hit:hover { border-color: var(--fgColor-accent, #0969da); background: var(--bgColor-muted, #f6f8fa); }
+.aji-hit.sel { border-color: var(--fgColor-accent, #0969da); background: var(--bgColor-muted, #f6f8fa); box-shadow: inset 3px 0 0 var(--fgColor-accent, #0969da); }
 .aji-hit-top { display: flex; align-items: baseline; gap: 8px; }
 .aji-sym { font-weight: 600; color: var(--fgColor-accent, #0969da); }
+.aji-lines { color: var(--fgColor-success, #1a7f37); font-size: 11px; border: 1px solid var(--borderColor-muted, #d8dee4); border-radius: 6px; padding: 0 5px; }
 .aji-score { margin-left: auto; color: var(--fgColor-muted, #656d76); font-size: 11px; font-variant-numeric: tabular-nums; }
-.aji-path { color: var(--fgColor-muted, #656d76); font-size: 12px; margin: 2px 0 4px; word-break: break-all; }
-.aji-lines { color: var(--fgColor-success, #1a7f37); }
+.aji-path { color: var(--fgColor-muted, #656d76); font-size: 12px; margin: 3px 0 5px; word-break: break-all; }
+.aji-dir { color: var(--fgColor-muted, #656d76); }
+.aji-file { color: var(--fgColor-default, #1f2328); font-weight: 600; }
+.aji-scorebar { height: 3px; border-radius: 2px; background: var(--bgColor-inset, #eaeef2); margin: 6px 0; overflow: hidden; }
+.aji-scorebar > div { height: 100%; background: var(--fgColor-accent, #0969da); }
+.aji-snip mark { background: var(--bgColor-attention-muted, #fff8c5); color: inherit; border-radius: 2px; }
 .aji-snip { margin: 0; padding: 6px 8px; background: var(--bgColor-muted, #f6f8fa); border-radius: 6px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; line-height: 1.45; white-space: pre-wrap; word-break: break-word; max-height: 96px; overflow: hidden; }
 .aji-foot { padding: 8px 14px; border-top: 1px solid var(--borderColor-muted, #d8dee4); color: var(--fgColor-muted, #656d76); font-size: 11px; }
 `
@@ -66,6 +72,8 @@ let device = ''
 let commit: string | null = null
 let results: Hit[] = []
 let visible = PAGE_SIZE
+let sel = 0
+let lastQuery = ''
 let status = ''
 let progress: IndexProgress | null = null
 let query = ''
@@ -150,21 +158,42 @@ function renderProgress(): string {
     <div class="aji-status">${esc(progress.message)}</div>`
 }
 
+const escRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
+function breadcrumb(path: string): string {
+  const parts = path.split('/')
+  const file = parts.pop() || ''
+  const dir = parts.join('/')
+  return `${dir ? `<span class="aji-dir">${esc(dir)}/</span>` : ''}<span class="aji-file">${esc(file)}</span>`
+}
+
+function highlightSnippet(text: string): string {
+  const base = esc(text)
+  const terms = [...new Set((query.toLowerCase().match(/[a-z0-9]+/g) || []).filter(t => t.length >= 3))].sort(
+    (a, b) => b.length - a.length,
+  )
+  if (!terms.length) return base
+  return base.replace(new RegExp('(' + terms.map(escRe).join('|') + ')', 'gi'), '<mark>$1</mark>')
+}
+
 function renderResults(): string {
   if (!results.length) return `<div class="aji-hint">${busy ? 'Searching…' : 'Type a query and press Enter.'}</div>`
   const rows = results
     .slice(0, visible)
-    .map(
-      (h, i) => `
-      <div class="aji-hit" data-act="hit" data-i="${i}">
+    .map((h, i) => {
+      const pct = Math.max(6, Math.min(100, Math.round(h.score * 100)))
+      return `
+      <div class="aji-hit${i === sel ? ' sel' : ''}" data-act="hit" data-i="${i}">
         <div class="aji-hit-top">
           <span class="aji-sym">${esc(h.symbol)}</span>
-          <span class="aji-score">${h.score.toFixed(3)}</span>
+          <span class="aji-lines">L${h.startLine}–${h.endLine}</span>
+          <span class="aji-score">${h.score.toFixed(2)}</span>
         </div>
-        <div class="aji-path">${esc(h.path)} <span class="aji-lines">L${h.startLine}-${h.endLine}</span></div>
-        <pre class="aji-snip">${esc(h.snippet)}</pre>
-      </div>`,
-    )
+        <div class="aji-path">${breadcrumb(h.path)}</div>
+        <div class="aji-scorebar"><div style="width:${pct}%"></div></div>
+        <pre class="aji-snip">${highlightSnippet(h.snippet)}</pre>
+      </div>`
+    })
     .join('')
   const more =
     results.length > visible
@@ -270,6 +299,8 @@ async function doSearch() {
     } else {
       results = res?.hits ?? []
       visible = PAGE_SIZE
+      sel = 0
+      lastQuery = q
       commit = res?.commit ?? commit
       status = results.length ? `Found ${results.length} results` : 'No matches'
     }
@@ -308,18 +339,38 @@ window.addEventListener(
       return
     }
 
-    if (fromPanel) {
-      if (e.key === 'Escape') {
-        e.preventDefault()
-        close()
-      } else if (e.key === 'Enter' && target?.classList?.contains('aji-input')) {
-        e.preventDefault()
-        doSearch()
-      }
-      // Keep the key away from the page; do NOT preventDefault so text still
-      // reaches the panel input.
+    // Esc closes the panel whenever it is open (works regardless of focus).
+    if (e.key === 'Escape' && panelOpen) {
+      e.preventDefault()
       e.stopImmediatePropagation()
+      close()
+      return
     }
+
+    if (!fromPanel) return
+
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      if (results.length) {
+        sel = e.key === 'ArrowDown' ? Math.min(results.length - 1, sel + 1) : Math.max(0, sel - 1)
+        e.preventDefault()
+        render()
+      }
+      e.stopImmediatePropagation()
+      return
+    }
+
+    if (e.key === 'Enter' && target?.classList?.contains('aji-input')) {
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      // First Enter runs the search; Enter again (unchanged query) opens the selection.
+      if (query.trim() && query.trim() !== lastQuery) doSearch()
+      else if (results[sel]) jump(results[sel])
+      return
+    }
+
+    // Keep every other key away from the page (GitHub's global hotkeys read the
+    // retargeted target); do NOT preventDefault so text still reaches the input.
+    e.stopImmediatePropagation()
   },
   true,
 )
@@ -349,6 +400,8 @@ onRouteChange(() => {
   if (changed) {
     results = []
     visible = PAGE_SIZE
+    sel = 0
+    lastQuery = ''
     commit = null
     indexed = false
     stale = false
