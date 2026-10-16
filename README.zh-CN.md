@@ -12,7 +12,7 @@
 ![Chrome MV3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4)
 
 <p align="center"><a href="https://github.com/miyuki-shirogane/Aji/raw/main/assets/demo.gif"><img src="./assets/demo.gif" alt="Aji 演示(GIF)" width="760" /></a></p>
-<p align="center"><sub>这是一张 GIF；「建立索引」一段做了 <b>约 6× 加速</b>，实际会慢一些（首次主要是模型加载）。</sub></p>
+<p align="center"><sub>这是一张 GIF；已加速（建立索引 <b>约 6×</b>，其余约 2×）。</sub></p>
 
 ## 特性
 

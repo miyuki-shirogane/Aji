@@ -12,7 +12,7 @@ English | [中文](./README.zh-CN.md)
 ![Chrome MV3](https://img.shields.io/badge/Chrome-Manifest%20V3-4285F4)
 
 <p align="center"><a href="https://github.com/miyuki-shirogane/Aji/raw/main/assets/demo.gif"><img src="./assets/demo.gif" alt="Aji demo (GIF)" width="760" /></a></p>
-<p align="center"><sub>A GIF — index building is shown <b>~6× faster</b> than real time (a bit longer on a cold start).</sub></p>
+<p align="center"><sub>A GIF — sped up (index building <b>~6×</b>, the rest ~2×).</sub></p>
 
 ## Features
 
